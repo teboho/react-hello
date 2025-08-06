@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>4D Penrose Tiling</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+    body {
+        background: linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        padding: 10px;
+    }
+    
+    .container {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        padding: 20px;
+        width: 100%;
+        max-width: 1200px;
+        display: flex;
+        flex-direction: column;
+        max-height: 95vh;
+        backdrop-filter: blur(10px);
+    }
+    
+    h1 {
+        text-align: center;
+        color: #fff;
+        margin-bottom: 5px;
+        font-size: clamp(20px, 4vw, 28px);
+        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+    }
+    
+    .subtitle {
+        text-align: center;
+        color: rgba(255, 255, 255, 0.7);
+        margin-bottom: 15px;
+        font-size: clamp(12px, 2vw, 14px);
+    }
+    
+    #canvas-container {
+        position: relative;
+        width: 100%;
+        flex: 1;
+        min-height: 300px;
+        border-radius: 10px;
+        overflow: hidden;
+        background: radial-gradient(ellipse at center, rgba(138, 43, 226, 0.1) 0%, rgba(0, 0, 0, 0.8) 100%);
+        border: 1px solid rgba(138, 43, 226, 0.3);
+    }
+    
+    canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: grab;
+    }
+    
+    canvas:active {
+        cursor: grabbing;
+    }
+    
+    .controls {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+    
+    button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: clamp(12px, 2vw, 14px);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        white-space: nowrap;
+        flex: 0 1 auto;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+    }
+    
+    button:active {
+        transform: translateY(0);
+    }
+    
+    button.active {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);
+    }
+    
+    button.animated {
+        background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+        background-size: 400% 400%;
+        animation: gradientShift 3s ease infinite;
+    }
+    
+    @keyframes gradientShift {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
+    
+    .slider-group {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .slider-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(255, 255, 255, 0.05);
+        padding: 8px 12px;
+        border-radius: 20px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    label {
+        color: rgba(255, 255, 255, 0.8);
+        font-size: 12px;
+        min-width: 40px;
+        text-align: right;
+    }
+    
+    .slider-value {
+        color: #667eea;
+        font-size: 11px;
+        min-width: 30px;
+        font-family: monospace;
+    }
+    
+    input[type="range"] {
+        width: 100px;
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(255, 255, 255, 0.2);
+        outline: none;
+        -webkit-appearance: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        cursor: pointer;
+    }
+    
+    input[type="range"]::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        cursor: pointer;
+        border: none;
+    }
+    
+    .info {
+        text-align: center;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: clamp(11px, 2vw, 12px);
+        margin-top: 10px;
+        padding: 0 10px;
+    }
+    
+    .stats {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+        font-size: 11px;
+        background: rgba(0,0,0,0.7);
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-family: monospace;
+        border: 1px solid rgba(138, 43, 226, 0.3);
+    }
+    
+    .dimension-indicator {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        color: #667eea;
+        font-size: 24px;
+        font-weight: bold;
+        text-shadow: 0 0 20px rgba(102, 126, 234, 0.8);
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 0.8; }
+        50% { opacity: 1; }
+    }
+    
+    /* Mobile optimizations */
+    @media (max-width: 640px) {
+        .container {
+            padding: 15px;
+        }
+        
+        .controls {
+            gap: 8px;
+        }
+        
+        button {
+            padding: 10px 14px;
+            font-size: 12px;
+        }
+        
+        #canvas-container {
+            min-height: 250px;
+        }
+        
+        input[type="range"] {
+            width: 80px;
+        }
+    }
+</style>
+
+</head>
+<body>
+    <div class="container">
+        <h1>4D Penrose Tiling</h1>
+        <div class="subtitle">Hyperdimensional Projection with W-Axis Rotation</div>
+
+    <div id="canvas-container">
+        <div class="stats" id="stats">FPS: 60 | Tiles: 0 | Dimension: 4D</div>
+        <div class="dimension-indicator">4D</div>
+    </div>
+    
+    <div class="controls">
+        <button onclick="generateTiling()">Regenerate</button>
+        <button onclick="toggleColors()" class="animated">Colors</button>
+        <button onclick="toggle4DRotation()" id="rotate4DBtn">4D Rotate</button>
+        <button onclick="toggleProjection()" id="projectionBtn">Projection</button>
+        <button onclick="resetCamera()">Reset View</button>
+        <button onclick="toggleTrails()" id="trailsBtn">Trails</button>
+    </div>
+    
+    <div class="slider-group">
+        <div class="slider-container">
+            <label>W-Axis:</label>
+            <input type="range" id="wSlider" min="-180" max="180" value="0" step="1">
+            <span class="slider-value" id="wValue">0°</span>
+        </div>
+        <div class="slider-container">
+            <label>Depth:</label>
+            <input type="range" id="depthSlider" min="0" max="100" value="50" step="1">
+            <span class="slider-value" id="depthValue">50</span>
+        </div>
+        <div class="slider-container">
+            <label>Time:</label>
+            <input type="range" id="timeSlider" min="0" max="100" value="0" step="1">
+            <span class="slider-value" id="timeValue">0</span>
+        </div>
+    </div>
+    
+    <div class="info">
+        Drag to rotate in 3D • Scroll to zoom • W-Axis slider rotates in 4th dimension • Time slider for temporal evolution
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+    // Global variables
+    let scene, camera, renderer;
+    let rhombi4D = [];
+    let meshGroups = [];
+    let rotate4D = false;
+    let projectionMode = 0; // 0: perspective, 1: stereographic, 2: orthographic
+    let wAngle = 0;
+    let fourDDepth = 50;
+    let timeEvolution = 0;
+    let showTrails = false;
+    let trailMeshes = [];
+    let colorScheme = 0;
+    let frameCount = 0;
+    let lastTime = performance.now();
+    
+    const PHI = (1 + Math.sqrt(5)) / 2;
+    
+    const colorSchemes = [
+        { name: 'Quantum', base: 0x00ffff, accent: 0xff00ff, glow: 0x4400ff },
+        { name: 'Hypercube', base: 0x667eea, accent: 0x764ba2, glow: 0x9966ff },
+        { name: 'Tesseract', base: 0x00ff88, accent: 0xff8800, glow: 0x00ffff },
+        { name: 'Dimensional', base: 0xff1493, accent: 0x00ced1, glow: 0xffd700 },
+        { name: 'Spacetime', base: 0x7fff00, accent: 0xff69b4, glow: 0x00ffff },
+        { name: 'Holographic', base: null, accent: null, glow: 0xffffff, special: 'holographic' }
+    ];
+    
+    // 4D Rhombus class
+    class Rhombus4D {
+        constructor(type, x, y, z, w, angle, size) {
+            this.type = type;
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.w = w;
+            this.angle = angle;
+            this.size = size;
+            this.baseColor = null;
+        }
+        
+        project3D(wRotation = 0) {
+            // 4D to 3D projection with W-axis rotation
+            const wRad = wRotation * Math.PI / 180;
+            const projectionDistance = 2;
+            const wFactor = 1 / (projectionDistance - this.w * Math.cos(wRad));
+            
+            return {
+                x: this.x * wFactor,
+                y: this.y * wFactor,
+                z: (this.z * Math.cos(wRad) - this.w * Math.sin(wRad)) * wFactor,
+                scale: wFactor
+            };
+        }
+        
+        stereographicProjection() {
+            // Stereographic projection from 4D to 3D
+            const denominator = 1 - this.w;
+            if (Math.abs(denominator) < 0.001) return { x: this.x, y: this.y, z: this.z, scale: 1 };
+            
+            return {
+                x: this.x / denominator,
+                y: this.y / denominator,
+                z: this.z / denominator,
+                scale: 1 / denominator
+            };
+        }
+        
+        getPoints3D(wRotation) {
+            const proj = projectionMode === 1 ? this.stereographicProjection() : this.project3D(wRotation);
+            const angle1 = this.type === 'thick' ? 72 * Math.PI / 180 : 36 * Math.PI / 180;
+            const points = [];
+            const scaledSize = this.size * proj.scale;
+            
+            points.push([proj.x, proj.y]);
+            points.push([
+                proj.x + scaledSize * Math.cos(this.angle),
+                proj.y + scaledSize * Math.sin(this.angle)
+            ]);
+            points.push([
+                proj.x + scaledSize * Math.cos(this.angle) + scaledSize * Math.cos(this.angle + angle1),
+                proj.y + scaledSize * Math.sin(this.angle) + scaledSize * Math.sin(this.angle + angle1)
+            ]);
+            points.push([
+                proj.x + scaledSize * Math.cos(this.angle + angle1),
+                proj.y + scaledSize * Math.sin(this.angle + angle1)
+            ]);
+            
+            return { points, z: proj.z, scale: proj.scale };
+        }
+        
+        subdivide() {
+            const newRhombi = [];
+            const s = this.size / PHI;
+            
+            // Subdivision happens in 4D space
+            const wOffset = (Math.random() - 0.5) * 0.1; // Small W-axis variation
+            
+            if (this.type === 'thick') {
+                const a1 = this.angle;
+                newRhombi.push(new Rhombus4D('thick', this.x, this.y, this.z, this.w + wOffset, a1, s));
+                newRhombi.push(new Rhombus4D('thin', 
+                    this.x + s * Math.cos(a1), 
+                    this.y + s * Math.sin(a1),
+                    this.z,
+                    this.w - wOffset,
+                    a1 + 144 * Math.PI / 180, s));
+                newRhombi.push(new Rhombus4D('thick', 
+                    this.x + this.size * Math.cos(a1), 
+                    this.y + this.size * Math.sin(a1),
+                    this.z,
+                    this.w + wOffset * 0.5,
+                    a1 + 108 * Math.PI / 180, s));
+            } else {
+                const a1 = this.angle;
+                newRhombi.push(new Rhombus4D('thin', this.x, this.y, this.z, this.w - wOffset, a1, s));
+                newRhombi.push(new Rhombus4D('thick', 
+                    this.x + s * Math.cos(a1), 
+                    this.y + s * Math.sin(a1),
+                    this.z,
+                    this.w + wOffset,
+                    a1 + 72 * Math.PI / 180, s));
+            }
+            
+            return newRhombi;
+        }
+    }
+    
+    // Initialize Three.js
+    function init() {
+        scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x000000, 100, 1000);
+        
+        const container = document.getElementById('canvas-container');
+        const aspect = container.clientWidth / container.clientHeight;
+        camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 2000);
+        camera.position.set(0, 100, 300);
+        
+        renderer = new THREE.WebGLRenderer({ 
+            antialias: true, 
+            alpha: true,
+            preserveDrawingBuffer: true 
+        });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+        
+        setupControls();
+        setupLights();
+        setupEventListeners();
+        generateTiling();
+        animate();
+    }
+    
+    function setupControls() {
+        const canvas = renderer.domElement;
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let rotation = { x: -0.3, y: 0 };
+        let distance = 400;
+        
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            const deltaMove = {
+                x: e.clientX - previousMousePosition.x,
+                y: e.clientY - previousMousePosition.y
+            };
+            
+            rotation.y += deltaMove.x * 0.01;
+            rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotation.x - deltaMove.y * 0.01));
+            
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+            updateCamera();
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            distance = Math.max(50, Math.min(1000, distance + e.deltaY * 0.5));
+            updateCamera();
+        });
+        
+        // Touch controls
+        let touches = [];
+        let lastTouchDistance = 0;
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touches = Array.from(e.touches);
+            
+            if (touches.length === 1) {
+                previousMousePosition = { x: touches[0].clientX, y: touches[0].clientY };
+            } else if (touches.length === 2) {
+                const dx = touches[0].clientX - touches[1].clientX;
+                const dy = touches[0].clientY - touches[1].clientY;
+                lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
+            }
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            touches = Array.from(e.touches);
+            
+            if (touches.length === 1) {
+                const deltaMove = {
+                    x: touches[0].clientX - previousMousePosition.x,
+                    y: touches[0].clientY - previousMousePosition.y
+                };
+                
+                rotation.y += deltaMove.x * 0.01;
+                rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotation.x - deltaMove.y * 0.01));
+                
+                previousMousePosition = { x: touches[0].clientX, y: touches[0].clientY };
+                updateCamera();
+            } else if (touches.length === 2) {
+                const dx = touches[0].clientX - touches[1].clientX;
+                const dy = touches[0].clientY - touches[1].clientY;
+                const touchDistance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (lastTouchDistance > 0) {
+                    const scale = touchDistance / lastTouchDistance;
+                    distance = Math.max(50, Math.min(1000, distance / scale));
+                    updateCamera();
+                }
+                
+                lastTouchDistance = touchDistance;
+            }
+        });
+        
+        window.updateCamera = function() {
+            camera.position.x = distance * Math.sin(rotation.y) * Math.cos(rotation.x);
+            camera.position.y = distance * Math.sin(rotation.x);
+            camera.position.z = distance * Math.cos(rotation.y) * Math.cos(rotation.x);
+            camera.lookAt(0, 0, 0);
+        };
+        
+        window.resetCamera = function() {
+            rotation = { x: -0.3, y: 0 };
+            distance = 400;
+            wAngle = 0;
+            document.getElementById('wSlider').value = 0;
+            document.getElementById('wValue').textContent = '0°';
+            updateCamera();
+            updateProjection();
+        };
+        
+        updateCamera();
+    }
+    
+    function setupLights() {
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+        scene.add(ambientLight);
+        
+        // Multiple colored lights for 4D effect
+        const colors = [0x00ffff, 0xff00ff, 0xffff00, 0x00ff00];
+        for (let i = 0; i < 4; i++) {
+            const light = new THREE.PointLight(colors[i], 0.5, 500);
+            const angle = (i / 4) * Math.PI * 2;
+            light.position.set(Math.cos(angle) * 200, 100, Math.sin(angle) * 200);
+            scene.add(light);
+        }
+        
+        // Moving lights to represent 4D rotation
+        for (let i = 0; i < 3; i++) {
+            const light = new THREE.PointLight(0xffffff, 0.3, 300);
+            light.userData = { index: i };
+            scene.add(light);
+        }
+    }
+    
+    function generateInitialTiling4D() {
+        const rhombi = [];
+        const numSectors = 5;
+        const initialSize = 40;
+        
+        for (let i = 0; i < numSectors; i++) {
+            const baseAngle = (i * 72 - 90) * Math.PI / 180;
+            const wPos = Math.sin(i * Math.PI / 2.5) * 0.3; // W-axis variation
+            
+            rhombi.push(new Rhombus4D('thick', 0, 0, 0, wPos, baseAngle, initialSize));
+            rhombi.push(new Rhombus4D('thick', 0, 0, 0, -wPos, baseAngle + 36 * Math.PI / 180, initialSize));
+        }
+        
+        return rhombi;
+    }
+    
+    function subdividePattern4D(rhombi, iterations) {
+        let current = rhombi;
+        
+        for (let i = 0; i < iterations; i++) {
+            const next = [];
+            for (const rhombus of current) {
+                next.push(...rhombus.subdivide());
+            }
+            current = next;
+        }
+        
+        return current;
+    }
+    
+    function createMeshFrom4D(rhombus4D, index) {
+        const data = rhombus4D.getPoints3D(wAngle);
+        const shape = new THREE.Shape();
+        
+        shape.moveTo(data.points[0][0], data.points[0][1]);
+        for (let i = 1; i < data.points.length; i++) {
+            shape.lineTo(data.points[i][0], data.points[i][1]);
+        }
+        shape.closePath();
+        
+        const depth = fourDDepth * data.scale;
+        const extrudeSettings = {
+            depth: Math.max(1, depth),
+            bevelEnabled: true,
+            bevelThickness: 0.5,
+            bevelSize: 0.3,
+            bevelSegments: 2
+        };
+        
+        const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        const scheme = colorSchemes[colorScheme];
+        
+        let color;
+        if (scheme.special === 'holographic') {
+            const hue = (index / rhombi4D.length * 360 + wAngle) % 360;
+            color = new THREE.Color(`hsl(${hue}, 100%, 60%)`);
+        } else {
+            color = new THREE.Color(rhombus4D.type === 'thick' ? scheme.base : scheme.accent);
+        }
+        
+        const material = new THREE.MeshPhongMaterial({
+            color: color,
+            emissive: color,
+            emissiveIntensity: 0.2,
+            transparent: true,
+            opacity: 0.8 + data.scale * 0.2,
+            side: THREE.DoubleSide
+        });
+        
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.position.z = data.z * 50;
+        
+        // Store 4D data for updates
+        mesh.userData.rhombus4D = rhombus4D;
+        mesh.userData.baseOpacity = material.opacity;
+        
+        return mesh;
+    }
+    
+    function generateTiling() {
+        // Clear existing meshes
+        meshGroups.forEach(group => {
+            scene.remove(group);
+            group.children.forEach(mesh => {
+                mesh.geometry.dispose();
+                mesh.material.dispose();
+            });
+        });
+        meshGroups = [];
+        
+        trailMeshes.forEach(mesh => {
+            scene.remove(mesh);
+            mesh.geometry.dispose();
+            mesh.material.dispose();
+        });
+        trailMeshes = [];
+        
+        // Generate 4D pattern
+        const initial = generateInitialTiling4D();
+        const iterations = window.innerWidth < 640 ? 2 : 3;
+        rhombi4D = subdividePattern4D(initial, iterations);
+        
+        // Create mesh group
+        const group = new THREE.Group();
+        rhombi4D.forEach((rhombus, index) => {
+            const mesh = createMeshFrom4D(rhombus, index);
+            group.add(mesh);
+        });
+        
+        meshGroups.push(group);
+        scene.add(group);
+        
+        // Update stats
+        document.getElementById('stats').textContent = `FPS: 60 | Tiles: ${rhombi4D.length} | Dimension: 4D`;
+    }
+    
+    function updateProjection() {
+        meshGroups.forEach(group => {
+            group.children.forEach((mesh, index) => {
+                const rhombus4D = mesh.userData.rhombus4D;
+                if (!rhombus4D) return;
+                
+                const data = rhombus4D.getPoints3D(wAngle);
+                
+                // Update position based on 4D projection
+                mesh.position.z = data.z * 50 + timeEvolution * Math.sin(index * 0.1) * 0.5;
+                
+                // Update scale
+                mesh.scale.set(data.scale, data.scale, data.scale);
+                
+                // Update opacity based on W-axis position
+                mesh.material.opacity = mesh.userData.baseOpacity * (0.5 + data.scale * 0.5);
+                
+                // Color shift based on 4D position
+                if (colorSchemes[colorScheme].special === 'holographic') {
+                    const hue = (index / rhombi4D.length * 360 + wAngle + timeEvolution) % 360;
+                    mesh.material.color.setHSL(hue / 360, 1, 0.6);
+                    mesh.material.emissive.setHSL(hue / 360, 1, 0.3);
+                }
+            });
+        });
+        
+        // Create trails if enabled
+        if (showTrails && Math.abs(wAngle) % 10 < 1) {
+            createTrailSnapshot();
+        }
+    }
+    
+    function createTrailSnapshot() {
+        if (trailMeshes.length > 20) {
+            const oldTrail = trailMeshes.shift();
+            scene.remove(oldTrail);
+            oldTrail.geometry.dispose();
+            oldTrail.material.dispose();
+        }
+        
+        meshGroups[0].children.forEach(mesh => {
+            const trailGeometry = mesh.geometry.clone();
+            const trailMaterial = mesh.material.clone();
+            trailMaterial.transparent = true;
+            trailMaterial.opacity = 0.1;
+            trailMaterial.emissiveIntensity = 0.5;
+            
+            const trailMesh = new THREE.Mesh(trailGeometry, trailMaterial);
+            trailMesh.position.copy(mesh.position);
+            trailMesh.rotation.copy(mesh.rotation);
+            trailMesh.scale.copy(mesh.scale);
+            
+            trailMeshes.push(trailMesh);
+            scene.add(trailMesh);
+        });
+    }
+    
+    function toggleColors() {
+        colorScheme = (colorScheme + 1) % colorSchemes.length;
+        updateProjection();
+    }
+    
+    function toggle4DRotation() {
+        rotate4D = !rotate4D;
+        document.getElementById('rotate4DBtn').classList.toggle('active');
+    }
+    
+    function toggleProjection() {
+        projectionMode = (projectionMode + 1) % 3;
+        const modes = ['Perspective', 'Stereographic', 'Orthographic'];
+        document.getElementById('projectionBtn').textContent = modes[projectionMode];
+        updateProjection();
+    }
+    
+    function toggleTrails() {
+        showTrails = !showTrails;
+        document.getElementById('trailsBtn').classList.toggle('active');
+        
+        if (!showTrails) {
+            trailMeshes.forEach(mesh => {
+                scene.remove(mesh);
+                mesh.geometry.dispose();
+                mesh.material.dispose();
+            });
+            trailMeshes = [];
+        }
+    }
+    
+    function setupEventListeners() {
+        // W-axis slider
+        document.getElementById('wSlider').addEventListener('input', (e) => {
+            wAngle = parseFloat(e.target.value);
+            document.getElementById('wValue').textContent = `${wAngle}°`;
+            updateProjection();
+        });
+        
+        // Depth slider
+        document.getElementById('depthSlider').addEventListener('input', (e) => {
+            fourDDepth = parseFloat(e.target.value);
+            document.getElementById('depthValue').textContent = fourDDepth;
+            generateTiling(); // Regenerate with new depth
+        });
+        
+        // Time evolution slider
+        document.getElementById('timeSlider').addEventListener('input', (e) => {
+            timeEvolution = parseFloat(e.target.value);
+            document.getElementById('timeValue').textContent = timeEvolution;
+            updateProjection();
+        });
+        
+        // Window resize
+        window.addEventListener('resize', () => {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+    }
+    
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        const time = performance.now() * 0.001;
+        
+        // Auto-rotate in 4D
+        if (rotate4D) {
+            wAngle = Math.sin(time * 0.5) * 180;
+            document.getElementById('wSlider').value = wAngle;
+            document.getElementById('wValue').textContent = `${Math.round(wAngle)}°`;
+            updateProjection();
+        }
+        
+        // Animate lights
+        scene.children.forEach(child => {
+            if (child.type === 'PointLight' && child.userData.index !== undefined) {
+                const i = child.userData.index;
+                const radius = 200 + Math.sin(time + i) * 50;
+                const angle = time + (i * Math.PI * 2 / 3);
+                child.position.set(
+                    Math.cos(angle) * radius,
+                    Math.sin(time * 2 + i) * 100,
+                    Math.sin(angle) * radius
+                );
+            }
+        });
+        
+        // Subtle floating animation
+        meshGroups.forEach(group => {
+            group.rotation.y = Math.sin(time * 0.1) * 0.05;
+            group.rotation.x = Math.cos(time * 0.15) * 0.03;
+        });
+        
+        // Update FPS
+        frameCount++;
+        const currentTime = performance.now();
+        if (currentTime - lastTime >= 1000) {
+            const fps = Math.round(frameCount * 1000 / (currentTime - lastTime));
+            const schemeName = colorSchemes[colorScheme].name;
+            document.getElementById('stats').textContent = `FPS: ${fps} | Tiles: ${rhombi4D.length} | Colors: ${schemeName}`;
+            frameCount = 0;
+            lastTime = currentTime;
+        }
+        
+        renderer.render(scene, camera);
+    }
+    
+    // Initialize
+    init();
+</script>
+
+</body>
+</html>
