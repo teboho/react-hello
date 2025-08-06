@@ -101,6 +101,10 @@
         transform: translateY(0);
     }
     
+    button:last-child {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
     .info {
         text-align: center;
         color: #666;
@@ -239,12 +243,13 @@
         <button onclick="zoomIn()">Zoom In</button>
         <button onclick="zoomOut()">Zoom Out</button>
         <button onclick="resetView()">Reset</button>
+        <button onclick="savePNG()">Save PNG</button>
     </div>
     
     <div class="info">
         <span class="desktop-info">Drag to pan • Scroll to zoom • </span>
         <span class="mobile-info">Swipe to pan • Pinch to zoom • </span>
-        Aperiodic pattern (never repeats)
+        Aperiodic pattern (never repeats) • Ctrl+S to save
     </div>
 </div>
 
@@ -470,6 +475,109 @@
         currentTranslateY = 0;
         updateTransform();
     }
+
+    function savePNG() {
+        // Create a temporary canvas
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Set canvas size (high resolution for quality)
+        const scale = 2; // 2x resolution for retina displays
+        canvas.width = 1600 * scale;
+        canvas.height = 1200 * scale;
+        
+        // Scale context for high DPI
+        ctx.scale(scale, scale);
+        
+        // Translate to center
+        ctx.translate(800, 600);
+        
+        // Apply current transform
+        ctx.scale(currentScale, currentScale);
+        ctx.translate(currentTranslateX, currentTranslateY);
+        
+        // Get all tiles and draw them
+        const tiles = document.querySelectorAll('.tile');
+        tiles.forEach(tile => {
+            const points = tile.getAttribute('points').split(' ').map(p => {
+                const [x, y] = p.split(',').map(Number);
+                return { x, y };
+            });
+            
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            ctx.closePath();
+            
+            // Get the tile's color
+            const fillColor = tile.style.fill || (tile.classList.contains('thick') ? '#ff6b6b' : '#4ecdc4');
+            ctx.fillStyle = fillColor + 'b3'; // Add transparency
+            ctx.fill();
+            
+            ctx.strokeStyle = '#333333';
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+        });
+        
+        // Convert to blob and download
+        canvas.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `penrose-tiling-${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 'image/png');
+    }
+    
+    function saveSVG() {
+        // Clone the SVG
+        const svg = document.getElementById('penrose');
+        const clone = svg.cloneNode(true);
+        
+        // Remove the grid background
+        const gridRect = clone.querySelector('rect');
+        if (gridRect) {
+            gridRect.remove();
+        }
+        
+        // Set transparent background
+        clone.style.background = 'transparent';
+        
+        // Apply current transform to the tiles group
+        const tilesGroup = clone.querySelector('#tiles');
+        const currentTransform = tilesGroup.getAttribute('transform');
+        if (!currentTransform) {
+            tilesGroup.setAttribute('transform', 
+                `translate(${currentTranslateX}, ${currentTranslateY}) scale(${currentScale})`);
+        }
+        
+        // Get SVG string
+        const svgString = new XMLSerializer().serializeToString(clone);
+        
+        // Create blob and download
+        const blob = new Blob([svgString], { type: 'image/svg+xml' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `penrose-tiling-${Date.now()}.svg`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
+    
+    // Add keyboard shortcut for saving
+    document.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            savePNG();
+        }
+    });
 
     // Mouse interaction
     let isDragging = false;
