@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Penrose Tiling</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        padding: 10px;
+    }
+    
+    .container {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        padding: 20px;
+        width: 100%;
+        max-width: 1200px;
+        display: flex;
+        flex-direction: column;
+        max-height: 95vh;
+        backdrop-filter: blur(10px);
+    }
+    
+    h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 5px;
+        font-size: clamp(20px, 4vw, 28px);
+    }
+    
+    .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 15px;
+        font-size: clamp(12px, 2vw, 14px);
+    }
+    
+    #canvas-container {
+        position: relative;
+        width: 100%;
+        flex: 1;
+        min-height: 300px;
+        border-radius: 10px;
+        overflow: hidden;
+        background: radial-gradient(ellipse at center, #1a1a2e 0%, #0f0f1e 100%);
+    }
+    
+    canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: grab;
+    }
+    
+    canvas:active {
+        cursor: grabbing;
+    }
+    
+    .controls {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+    
+    button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: clamp(12px, 2vw, 14px);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        white-space: nowrap;
+        flex: 0 1 auto;
+    }
+    
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    
+    button:active {
+        transform: translateY(0);
+    }
+    
+    button.active {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    
+    .slider-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .slider-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    
+    label {
+        color: #666;
+        font-size: 12px;
+        min-width: 60px;
+    }
+    
+    input[type="range"] {
+        width: 120px;
+        height: 4px;
+        border-radius: 2px;
+        background: linear-gradient(to right, #667eea, #764ba2);
+        outline: none;
+        -webkit-appearance: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        cursor: pointer;
+    }
+    
+    input[type="range"]::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: white;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        cursor: pointer;
+        border: none;
+    }
+    
+    .info {
+        text-align: center;
+        color: #666;
+        font-size: clamp(11px, 2vw, 12px);
+        margin-top: 10px;
+        padding: 0 10px;
+    }
+    
+    .stats {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+        font-size: 11px;
+        background: rgba(0,0,0,0.5);
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-family: monospace;
+    }
+    
+    /* Mobile optimizations */
+    @media (max-width: 640px) {
+        .container {
+            padding: 15px;
+        }
+        
+        .controls {
+            gap: 8px;
+        }
+        
+        button {
+            padding: 10px 14px;
+            font-size: 12px;
+        }
+        
+        #canvas-container {
+            min-height: 250px;
+        }
+        
+        input[type="range"] {
+            width: 100px;
+        }
+    }
+    
+    /* Landscape mobile */
+    @media (max-height: 500px) {
+        .container {
+            padding: 10px;
+        }
+        
+        h1 {
+            margin-bottom: 2px;
+        }
+        
+        .subtitle {
+            margin-bottom: 5px;
+        }
+        
+        .controls {
+            margin-top: 8px;
+            gap: 5px;
+        }
+        
+        #canvas-container {
+            min-height: 200px;
+        }
+    }
+</style>
+
+</head>
+<body>
+    <div class="container">
+        <h1>3D Penrose Tiling</h1>
+        <div class="subtitle">Interactive Three-Dimensional P2 Rhombus Tiling</div>
+
+    <div id="canvas-container">
+        <div class="stats" id="stats">FPS: 60 | Tiles: 0</div>
+    </div>
+    
+    <div class="controls">
+        <button onclick="generateTiling()">Regenerate</button>
+        <button onclick="toggleColors()">Colors</button>
+        <button onclick="toggleAutoRotate()" id="rotateBtn">Auto Rotate</button>
+        <button onclick="toggleWireframe()" id="wireframeBtn">Wireframe</button>
+        <button onclick="resetCamera()">Reset View</button>
+        <button onclick="saveImage()">Save Image</button>
+    </div>
+    
+    <div class="slider-group">
+        <div class="slider-container">
+            <label>Height:</label>
+            <input type="range" id="heightSlider" min="0" max="50" value="10" step="1">
+        </div>
+        <div class="slider-container">
+            <label>Spacing:</label>
+            <input type="range" id="spacingSlider" min="0" max="20" value="0" step="1">
+        </div>
+    </div>
+    
+    <div class="info">
+        Drag to rotate • Scroll to zoom • Right-click to pan • Adjust sliders for 3D effects
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+    // Global variables
+    let scene, camera, renderer, controls;
+    let rhombiMeshes = [];
+    let autoRotate = false;
+    let wireframe = false;
+    let tileHeight = 10;
+    let tileSpacing = 0;
+    let colorScheme = 0;
+    let frameCount = 0;
+    let lastTime = performance.now();
+    
+    const PHI = (1 + Math.sqrt(5)) / 2;
+    
+    const colorSchemes = [
+        { thick: 0xff6b6b, thin: 0x4ecdc4, emissive: 0x330000 },
+        { thick: 0xf9ca24, thin: 0x6c5ce7, emissive: 0x332200 },
+        { thick: 0x30336b, thin: 0x95afc0, emissive: 0x000033 },
+        { thick: 0xeb4d4b, thin: 0x22a6b3, emissive: 0x330011 }
+    ];
+    
+    // Initialize Three.js
+    function init() {
+        // Scene
+        scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x0f0f1e, 100, 1000);
+        
+        // Camera
+        const container = document.getElementById('canvas-container');
+        const aspect = container.clientWidth / container.clientHeight;
+        camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
+        camera.position.set(0, 200, 300);
+        
+        // Renderer
+        renderer = new THREE.WebGLRenderer({ 
+            antialias: true, 
+            alpha: true,
+            preserveDrawingBuffer: true 
+        });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        container.appendChild(renderer.domElement);
+        
+        // Controls
+        setupControls();
+        
+        // Lights
+        setupLights();
+        
+        // Generate initial tiling
+        generateTiling();
+        
+        // Event listeners
+        setupEventListeners();
+        
+        // Start animation
+        animate();
+    }
+    
+    function setupControls() {
+        // Custom orbit controls implementation
+        const canvas = renderer.domElement;
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let rotation = { x: -0.5, y: 0 };
+        let distance = 400;
+        let panOffset = { x: 0, y: 0 };
+        
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            const deltaMove = {
+                x: e.clientX - previousMousePosition.x,
+                y: e.clientY - previousMousePosition.y
+            };
+            
+            if (e.buttons === 1) { // Left click - rotate
+                rotation.y += deltaMove.x * 0.01;
+                rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotation.x - deltaMove.y * 0.01));
+            } else if (e.buttons === 2) { // Right click - pan
+                panOffset.x -= deltaMove.x * 0.5;
+                panOffset.y += deltaMove.y * 0.5;
+            }
+            
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+            updateCamera();
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            distance = Math.max(50, Math.min(800, distance + e.deltaY * 0.5));
+            updateCamera();
+        });
+        
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+        
+        // Touch controls
+        let touches = [];
+        let lastTouchDistance = 0;
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touches = Array.from(e.touches);
+            
+            if (touches.length === 1) {
+                previousMousePosition = { x: touches[0].clientX, y: touches[0].clientY };
+            } else if (touches.length === 2) {
+                const dx = touches[0].clientX - touches[1].clientX;
+                const dy = touches[0].clientY - touches[1].clientY;
+                lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
+            }
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            touches = Array.from(e.touches);
+            
+            if (touches.length === 1) {
+                const deltaMove = {
+                    x: touches[0].clientX - previousMousePosition.x,
+                    y: touches[0].clientY - previousMousePosition.y
+                };
+                
+                rotation.y += deltaMove.x * 0.01;
+                rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotation.x - deltaMove.y * 0.01));
+                
+                previousMousePosition = { x: touches[0].clientX, y: touches[0].clientY };
+                updateCamera();
+            } else if (touches.length === 2) {
+                const dx = touches[0].clientX - touches[1].clientX;
+                const dy = touches[0].clientY - touches[1].clientY;
+                const touchDistance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (lastTouchDistance > 0) {
+                    const scale = touchDistance / lastTouchDistance;
+                    distance = Math.max(50, Math.min(800, distance / scale));
+                    updateCamera();
+                }
+                
+                lastTouchDistance = touchDistance;
+            }
+        });
+        
+        canvas.addEventListener('touchend', () => {
+            lastTouchDistance = 0;
+        });
+        
+        window.updateCamera = function() {
+            camera.position.x = distance * Math.sin(rotation.y) * Math.cos(rotation.x) + panOffset.x;
+            camera.position.y = distance * Math.sin(rotation.x) + panOffset.y;
+            camera.position.z = distance * Math.cos(rotation.y) * Math.cos(rotation.x);
+            camera.lookAt(panOffset.x, panOffset.y, 0);
+        };
+        
+        window.resetCamera = function() {
+            rotation = { x: -0.5, y: 0 };
+            distance = 400;
+            panOffset = { x: 0, y: 0 };
+            updateCamera();
+        };
+        
+        updateCamera();
+    }
+    
+    function setupLights() {
+        // Ambient light
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        scene.add(ambientLight);
+        
+        // Directional light
+        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        dirLight.position.set(50, 100, 50);
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.left = -200;
+        dirLight.shadow.camera.right = 200;
+        dirLight.shadow.camera.top = 200;
+        dirLight.shadow.camera.bottom = -200;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        scene.add(dirLight);
+        
+        // Point lights for color
+        const pointLight1 = new THREE.PointLight(0x667eea, 0.5, 500);
+        pointLight1.position.set(-100, 50, 100);
+        scene.add(pointLight1);
+        
+        const pointLight2 = new THREE.PointLight(0x764ba2, 0.5, 500);
+        pointLight2.position.set(100, 50, -100);
+        scene.add(pointLight2);
+    }
+    
+    class Rhombus3D {
+        constructor(type, x, y, angle, size) {
+            this.type = type;
+            this.x = x;
+            this.y = y;
+            this.angle = angle;
+            this.size = size;
+        }
+        
+        getPoints() {
+            const angle1 = this.type === 'thick' ? 72 * Math.PI / 180 : 36 * Math.PI / 180;
+            const points = [];
+            
+            points.push([this.x, this.y]);
+            points.push([
+                this.x + this.size * Math.cos(this.angle),
+                this.y + this.size * Math.sin(this.angle)
+            ]);
+            points.push([
+                this.x + this.size * Math.cos(this.angle) + this.size * Math.cos(this.angle + angle1),
+                this.y + this.size * Math.sin(this.angle) + this.size * Math.sin(this.angle + angle1)
+            ]);
+            points.push([
+                this.x + this.size * Math.cos(this.angle + angle1),
+                this.y + this.size * Math.sin(this.angle + angle1)
+            ]);
+            
+            return points;
+        }
+        
+        subdivide() {
+            const newRhombi = [];
+            const s = this.size / PHI;
+            
+            if (this.type === 'thick') {
+                const a1 = this.angle;
+                newRhombi.push(new Rhombus3D('thick', this.x, this.y, a1, s));
+                newRhombi.push(new Rhombus3D('thin', 
+                    this.x + s * Math.cos(a1), 
+                    this.y + s * Math.sin(a1), 
+                    a1 + 144 * Math.PI / 180, s));
+                newRhombi.push(new Rhombus3D('thick', 
+                    this.x + this.size * Math.cos(a1), 
+                    this.y + this.size * Math.sin(a1), 
+                    a1 + 108 * Math.PI / 180, s));
+            } else {
+                const a1 = this.angle;
+                newRhombi.push(new Rhombus3D('thin', this.x, this.y, a1, s));
+                newRhombi.push(new Rhombus3D('thick', 
+                    this.x + s * Math.cos(a1), 
+                    this.y + s * Math.sin(a1), 
+                    a1 + 72 * Math.PI / 180, s));
+            }
+            
+            return newRhombi;
+        }
+        
+        createMesh(index) {
+            const points = this.getPoints();
+            const shape = new THREE.Shape();
+            
+            shape.moveTo(points[0][0], points[0][1]);
+            for (let i = 1; i < points.length; i++) {
+                shape.lineTo(points[i][0], points[i][1]);
+            }
+            shape.closePath();
+            
+            const extrudeSettings = {
+                depth: tileHeight,
+                bevelEnabled: true,
+                bevelThickness: 1,
+                bevelSize: 0.5,
+                bevelSegments: 2
+            };
+            
+            const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+            const scheme = colorSchemes[colorScheme];
+            
+            const material = new THREE.MeshPhongMaterial({
+                color: this.type === 'thick' ? scheme.thick : scheme.thin,
+                emissive: scheme.emissive,
+                emissiveIntensity: 0.1,
+                shininess: 100,
+                wireframe: wireframe,
+                side: THREE.DoubleSide
+            });
+            
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.castShadow = true;
+            mesh.receiveShadow = true;
+            
+            // Add spacing effect
+            if (tileSpacing > 0) {
+                const center = points.reduce((acc, p) => {
+                    return { x: acc.x + p[0]/4, y: acc.y + p[1]/4 };
+                }, { x: 0, y: 0 });
+                
+                const offsetX = (center.x / Math.abs(center.x || 1)) * tileSpacing;
+                const offsetY = (center.y / Math.abs(center.y || 1)) * tileSpacing;
+                mesh.position.set(offsetX, 0, offsetY);
+            }
+            
+            // Animation delay
+            mesh.userData.animationDelay = index * 0.01;
+            mesh.userData.originalY = mesh.position.y;
+            
+            return mesh;
+        }
+    }
+    
+    function generateInitialTiling() {
+        const rhombi = [];
+        const numSectors = 5;
+        const initialSize = 50;
+        
+        const randomConfig = Math.floor(Math.random() * 3);
+        const randomRotation = Math.random() * 360;
+        
+        for (let i = 0; i < numSectors; i++) {
+            const baseAngle = (i * 72 - 90 + randomRotation) * Math.PI / 180;
+            
+            if (randomConfig === 0) {
+                rhombi.push(new Rhombus3D('thick', 0, 0, baseAngle, initialSize));
+                rhombi.push(new Rhombus3D('thick', 0, 0, baseAngle + 36 * Math.PI / 180, initialSize));
+            } else if (randomConfig === 1) {
+                rhombi.push(new Rhombus3D('thick', 0, 0, baseAngle, initialSize));
+                rhombi.push(new Rhombus3D('thin', 0, 0, baseAngle + 36 * Math.PI / 180, initialSize * 0.8));
+            } else {
+                const offset = Math.random() * 20 - 10;
+                rhombi.push(new Rhombus3D('thick', 0, 0, baseAngle + offset * Math.PI / 180, initialSize));
+                if (i % 2 === 0) {
+                    rhombi.push(new Rhombus3D('thin', 0, 0, baseAngle + 36 * Math.PI / 180, initialSize * 0.9));
+                } else {
+                    rhombi.push(new Rhombus3D('thick', 0, 0, baseAngle + 36 * Math.PI / 180, initialSize));
+                }
+            }
+        }
+        
+        return rhombi;
+    }
+    
+    function subdividePattern(rhombi, iterations) {
+        let current = rhombi;
+        const adjustedIterations = iterations + (Math.random() > 0.5 ? 0 : -1);
+        
+        for (let i = 0; i < adjustedIterations; i++) {
+            const next = [];
+            for (const rhombus of current) {
+                if (i === adjustedIterations - 1 && Math.random() > 0.95) {
+                    next.push(rhombus);
+                } else {
+                    next.push(...rhombus.subdivide());
+                }
+            }
+            current = next;
+        }
+        
+        return current;
+    }
+    
+    function generateTiling() {
+        // Clear existing meshes
+        rhombiMeshes.forEach(mesh => {
+            scene.remove(mesh);
+            mesh.geometry.dispose();
+            mesh.material.dispose();
+        });
+        rhombiMeshes = [];
+        
+        // Generate new pattern
+        const initial = generateInitialTiling();
+        const iterations = window.innerWidth < 640 ? 2 : 3;
+        const subdivided = subdividePattern(initial, iterations);
+        
+        // Random color scheme
+        colorScheme = Math.floor(Math.random() * colorSchemes.length);
+        
+        // Create 3D meshes
+        subdivided.forEach((rhombus, index) => {
+            const mesh = rhombus.createMesh(index);
+            rhombiMeshes.push(mesh);
+            scene.add(mesh);
+        });
+        
+        // Update stats
+        document.getElementById('stats').textContent = `FPS: 60 | Tiles: ${rhombiMeshes.length}`;
+    }
+    
+    function toggleColors() {
+        colorScheme = (colorScheme + 1) % colorSchemes.length;
+        const scheme = colorSchemes[colorScheme];
+        
+        rhombiMeshes.forEach(mesh => {
+            const isThick = mesh.material.color.getHex() === colorSchemes[(colorScheme - 1 + colorSchemes.length) % colorSchemes.length].thick;
+            mesh.material.color.setHex(isThick ? scheme.thick : scheme.thin);
+            mesh.material.emissive.setHex(scheme.emissive);
+        });
+    }
+    
+    function toggleAutoRotate() {
+        autoRotate = !autoRotate;
+        document.getElementById('rotateBtn').classList.toggle('active');
+    }
+    
+    function toggleWireframe() {
+        wireframe = !wireframe;
+        rhombiMeshes.forEach(mesh => {
+            mesh.material.wireframe = wireframe;
+        });
+        document.getElementById('wireframeBtn').classList.toggle('active');
+    }
+    
+    function saveImage() {
+        renderer.render(scene, camera);
+        renderer.domElement.toBlob((blob) => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `penrose-3d-${Date.now()}.png`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }, 'image/png');
+    }
+    
+    function setupEventListeners() {
+        // Height slider
+        document.getElementById('heightSlider').addEventListener('input', (e) => {
+            tileHeight = parseFloat(e.target.value);
+            generateTiling();
+        });
+        
+        // Spacing slider
+        document.getElementById('spacingSlider').addEventListener('input', (e) => {
+            tileSpacing = parseFloat(e.target.value);
+            generateTiling();
+        });
+        
+        // Window resize
+        window.addEventListener('resize', () => {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+    }
+    
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        const time = performance.now() * 0.001;
+        
+        // Auto rotation
+        if (autoRotate) {
+            scene.rotation.y += 0.005;
+        }
+        
+        // Floating animation
+        rhombiMeshes.forEach(mesh => {
+            const delay = mesh.userData.animationDelay;
+            mesh.position.y = mesh.userData.originalY + Math.sin(time + delay) * 2;
+        });
+        
+        // Update FPS
+        frameCount++;
+        const currentTime = performance.now();
+        if (currentTime - lastTime >= 1000) {
+            const fps = Math.round(frameCount * 1000 / (currentTime - lastTime));
+            document.getElementById('stats').textContent = `FPS: ${fps} | Tiles: ${rhombiMeshes.length}`;
+            frameCount = 0;
+            lastTime = currentTime;
+        }
+        
+        renderer.render(scene, camera);
+    }
+    
+    // Initialize on load
+    init();
+</script>
+
+</body>
+</html>
