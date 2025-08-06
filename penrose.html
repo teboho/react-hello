@@ -6,52 +6,75 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Penrose Tiling</title>
     <style>
-        body {
+        * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
         }
 
 ```
+    body {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        padding: 10px;
+    }
+    
     .container {
         background: white;
         border-radius: 20px;
         box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        padding: 30px;
-        max-width: 90vw;
-        max-height: 90vh;
+        padding: 20px;
+        width: 100%;
+        max-width: 1200px;
+        display: flex;
+        flex-direction: column;
+        max-height: 95vh;
     }
     
     h1 {
         text-align: center;
         color: #333;
-        margin-bottom: 10px;
-        font-size: 28px;
+        margin-bottom: 5px;
+        font-size: clamp(20px, 4vw, 28px);
     }
     
     .subtitle {
         text-align: center;
         color: #666;
-        margin-bottom: 20px;
-        font-size: 14px;
+        margin-bottom: 15px;
+        font-size: clamp(12px, 2vw, 14px);
+    }
+    
+    .svg-container {
+        position: relative;
+        width: 100%;
+        flex: 1;
+        min-height: 300px;
+        background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="50" height="50"><path d="M0,0 L50,0 L50,50 L0,50 Z" fill="none" stroke="%23f0f0f0" stroke-width="0.5"/><path d="M0,0 L0,50" stroke="%23f0f0f0" stroke-width="0.5"/></svg>');
+        background-size: 50px 50px;
+        border-radius: 10px;
+        overflow: hidden;
     }
     
     svg {
-        display: block;
-        margin: 0 auto;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
         cursor: move;
+        touch-action: none;
     }
     
     .controls {
         display: flex;
-        gap: 15px;
+        gap: 10px;
         justify-content: center;
-        margin-top: 20px;
+        margin-top: 15px;
         flex-wrap: wrap;
     }
     
@@ -59,12 +82,14 @@
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
         border: none;
-        padding: 10px 20px;
+        padding: 8px 16px;
         border-radius: 25px;
         cursor: pointer;
-        font-size: 14px;
+        font-size: clamp(12px, 2vw, 14px);
         transition: all 0.3s ease;
         box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        white-space: nowrap;
+        flex: 0 1 auto;
     }
     
     button:hover {
@@ -72,11 +97,16 @@
         box-shadow: 0 6px 20px rgba(0,0,0,0.3);
     }
     
+    button:active {
+        transform: translateY(0);
+    }
+    
     .info {
         text-align: center;
         color: #666;
-        font-size: 12px;
-        margin-top: 15px;
+        font-size: clamp(11px, 2vw, 12px);
+        margin-top: 10px;
+        padding: 0 10px;
     }
     
     .tile {
@@ -107,6 +137,86 @@
     .tile {
         animation: fadeIn 0.5s ease forwards;
     }
+    
+    /* Mobile optimizations */
+    @media (max-width: 640px) {
+        .container {
+            padding: 15px;
+            border-radius: 15px;
+        }
+        
+        .controls {
+            gap: 8px;
+        }
+        
+        button {
+            padding: 10px 14px;
+            font-size: 12px;
+        }
+        
+        .svg-container {
+            min-height: 250px;
+        }
+    }
+    
+    /* Tablet optimizations */
+    @media (min-width: 641px) and (max-width: 1024px) {
+        .container {
+            padding: 25px;
+        }
+        
+        .svg-container {
+            min-height: 400px;
+        }
+    }
+    
+    /* Landscape mobile */
+    @media (max-height: 500px) {
+        .container {
+            max-height: 100vh;
+            padding: 10px;
+        }
+        
+        h1 {
+            margin-bottom: 2px;
+        }
+        
+        .subtitle {
+            margin-bottom: 5px;
+        }
+        
+        .controls {
+            margin-top: 8px;
+            gap: 5px;
+        }
+        
+        button {
+            padding: 6px 12px;
+        }
+        
+        .info {
+            margin-top: 5px;
+        }
+        
+        .svg-container {
+            min-height: 200px;
+        }
+    }
+    
+    /* Touch device optimizations */
+    @media (hover: none) and (pointer: coarse) {
+        button {
+            padding: 12px 18px;
+            min-height: 44px;
+        }
+    }
+    
+    /* High resolution screens */
+    @media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+        .tile {
+            stroke-width: 0.25;
+        }
+    }
 </style>
 ```
 
@@ -117,26 +227,24 @@
         <div class="subtitle">P2 Rhombus Tiling with Golden Ratio Properties</div>
 
 ```
-    <svg id="penrose" width="800" height="600" viewBox="-400 -300 800 600">
-        <defs>
-            <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
-                <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#f0f0f0" stroke-width="0.5"/>
-            </pattern>
-        </defs>
-        <rect x="-400" y="-300" width="800" height="600" fill="url(#grid)"/>
-        <g id="tiles"></g>
-    </svg>
+    <div class="svg-container">
+        <svg id="penrose" viewBox="-400 -300 800 600" preserveAspectRatio="xMidYMid meet">
+            <g id="tiles"></g>
+        </svg>
+    </div>
     
     <div class="controls">
-        <button onclick="generateTiling()">Regenerate Pattern</button>
-        <button onclick="toggleColors()">Switch Colors</button>
+        <button onclick="generateTiling()">Regenerate</button>
+        <button onclick="toggleColors()">Colors</button>
         <button onclick="zoomIn()">Zoom In</button>
         <button onclick="zoomOut()">Zoom Out</button>
-        <button onclick="resetView()">Reset View</button>
+        <button onclick="resetView()">Reset</button>
     </div>
     
     <div class="info">
-        Drag to pan • Scroll to zoom • Penrose tilings are aperiodic (never repeat)
+        <span class="desktop-info">Drag to pan • Scroll to zoom • </span>
+        <span class="mobile-info">Swipe to pan • Pinch to zoom • </span>
+        Aperiodic pattern (never repeats)
     </div>
 </div>
 
@@ -153,6 +261,25 @@
         { thick: '#30336b', thin: '#95afc0' },
         { thick: '#eb4d4b', thin: '#22a6b3' }
     ];
+
+    // Detect touch device
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    
+    // Update info text based on device
+    document.addEventListener('DOMContentLoaded', () => {
+        const desktopInfo = document.querySelector('.desktop-info');
+        const mobileInfo = document.querySelector('.mobile-info');
+        
+        if (desktopInfo && mobileInfo) {
+            if (isTouchDevice) {
+                desktopInfo.style.display = 'none';
+                mobileInfo.style.display = 'inline';
+            } else {
+                desktopInfo.style.display = 'inline';
+                mobileInfo.style.display = 'none';
+            }
+        }
+    });
 
     class Rhombus {
         constructor(type, x, y, angle, size) {
@@ -189,7 +316,6 @@
             const s = this.size / PHI;
             
             if (this.type === 'thick') {
-                // Subdivide thick rhombus
                 const a1 = this.angle;
                 const a2 = this.angle + 72 * Math.PI / 180;
                 
@@ -203,7 +329,6 @@
                     this.y + this.size * Math.sin(a1), 
                     a1 + 108 * Math.PI / 180, s));
             } else {
-                // Subdivide thin rhombus
                 const a1 = this.angle;
                 
                 newRhombi.push(new Rhombus('thin', this.x, this.y, a1, s));
@@ -234,7 +359,11 @@
     function subdividePattern(rhombi, iterations) {
         let current = rhombi;
         
-        for (let i = 0; i < iterations; i++) {
+        // Adjust iterations based on screen size for performance
+        const screenWidth = window.innerWidth;
+        const adjustedIterations = screenWidth < 640 ? Math.min(iterations, 3) : iterations;
+        
+        for (let i = 0; i < adjustedIterations; i++) {
             const next = [];
             for (const rhombus of current) {
                 next.push(...rhombus.subdivide());
@@ -259,7 +388,7 @@
             polygon.setAttribute('points', pointsStr);
             polygon.setAttribute('class', `tile ${rhombus.type}`);
             polygon.style.fill = scheme[rhombus.type];
-            polygon.style.animationDelay = `${index * 0.001}s`;
+            polygon.style.animationDelay = `${Math.min(index * 0.001, 0.5)}s`;
             
             svg.appendChild(polygon);
         });
@@ -307,7 +436,7 @@
         updateTransform();
     }
 
-    // Mouse drag functionality
+    // Mouse interaction
     let isDragging = false;
     let startX, startY;
 
@@ -338,17 +467,84 @@
         svg.style.cursor = 'move';
     });
 
+    // Touch interaction
+    let touches = [];
+    let lastDistance = 0;
+
+    svg.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        touches = Array.from(e.touches);
+        
+        if (touches.length === 1) {
+            isDragging = true;
+            startX = touches[0].clientX - currentTranslateX;
+            startY = touches[0].clientY - currentTranslateY;
+        } else if (touches.length === 2) {
+            isDragging = false;
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            lastDistance = Math.sqrt(dx * dx + dy * dy);
+        }
+    });
+
+    svg.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        touches = Array.from(e.touches);
+        
+        if (touches.length === 1 && isDragging) {
+            currentTranslateX = touches[0].clientX - startX;
+            currentTranslateY = touches[0].clientY - startY;
+            updateTransform();
+        } else if (touches.length === 2) {
+            const dx = touches[0].clientX - touches[1].clientX;
+            const dy = touches[0].clientY - touches[1].clientY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (lastDistance > 0) {
+                const scale = distance / lastDistance;
+                currentScale *= scale;
+                currentScale = Math.max(0.1, Math.min(10, currentScale));
+                updateTransform();
+            }
+            
+            lastDistance = distance;
+        }
+    });
+
+    svg.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        touches = Array.from(e.touches);
+        
+        if (touches.length < 2) {
+            lastDistance = 0;
+        }
+        
+        if (touches.length === 0) {
+            isDragging = false;
+        }
+    });
+
     // Mouse wheel zoom
     svg.addEventListener('wheel', (e) => {
         e.preventDefault();
         
-        if (e.deltaY < 0) {
-            currentScale *= 1.1;
-        } else {
-            currentScale /= 1.1;
-        }
+        const delta = e.deltaY < 0 ? 1.1 : 0.9;
+        currentScale *= delta;
+        currentScale = Math.max(0.1, Math.min(10, currentScale));
         
         updateTransform();
+    });
+
+    // Handle window resize
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+            // Optionally regenerate with different complexity based on new size
+            if (window.innerWidth < 640) {
+                generateTiling();
+            }
+        }, 250);
     });
 
     // Initialize
