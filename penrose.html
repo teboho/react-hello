@@ -347,10 +347,31 @@
         const numSectors = 5;
         const initialSize = 100;
         
+        // Randomize the starting configuration
+        const randomConfig = Math.floor(Math.random() * 3);
+        const randomRotation = Math.random() * 360;
+        
         for (let i = 0; i < numSectors; i++) {
-            const angle = (i * 72 - 90) * Math.PI / 180;
-            rhombi.push(new Rhombus('thick', 0, 0, angle, initialSize));
-            rhombi.push(new Rhombus('thick', 0, 0, angle + 36 * Math.PI / 180, initialSize));
+            const baseAngle = (i * 72 - 90 + randomRotation) * Math.PI / 180;
+            
+            if (randomConfig === 0) {
+                // Standard configuration
+                rhombi.push(new Rhombus('thick', 0, 0, baseAngle, initialSize));
+                rhombi.push(new Rhombus('thick', 0, 0, baseAngle + 36 * Math.PI / 180, initialSize));
+            } else if (randomConfig === 1) {
+                // Mixed configuration
+                rhombi.push(new Rhombus('thick', 0, 0, baseAngle, initialSize));
+                rhombi.push(new Rhombus('thin', 0, 0, baseAngle + 36 * Math.PI / 180, initialSize * 0.8));
+            } else {
+                // Alternative star configuration
+                const offset = Math.random() * 20 - 10;
+                rhombi.push(new Rhombus('thick', 0, 0, baseAngle + offset * Math.PI / 180, initialSize));
+                if (i % 2 === 0) {
+                    rhombi.push(new Rhombus('thin', 0, 0, baseAngle + 36 * Math.PI / 180, initialSize * 0.9));
+                } else {
+                    rhombi.push(new Rhombus('thick', 0, 0, baseAngle + 36 * Math.PI / 180, initialSize));
+                }
+            }
         }
         
         return rhombi;
@@ -361,12 +382,20 @@
         
         // Adjust iterations based on screen size for performance
         const screenWidth = window.innerWidth;
-        const adjustedIterations = screenWidth < 640 ? Math.min(iterations, 3) : iterations;
+        const baseIterations = screenWidth < 640 ? Math.min(iterations, 3) : iterations;
+        
+        // Randomize iteration count slightly
+        const adjustedIterations = baseIterations + (Math.random() > 0.5 ? 0 : -1);
         
         for (let i = 0; i < adjustedIterations; i++) {
             const next = [];
             for (const rhombus of current) {
-                next.push(...rhombus.subdivide());
+                // Occasionally skip subdivision for variation
+                if (i === adjustedIterations - 1 && Math.random() > 0.95) {
+                    next.push(rhombus);
+                } else {
+                    next.push(...rhombus.subdivide());
+                }
             }
             current = next;
         }
@@ -396,8 +425,14 @@
 
     function generateTiling() {
         const initial = generateInitialTiling();
-        const subdivided = subdividePattern(initial, 4);
+        const iterations = 3 + Math.floor(Math.random() * 2); // Vary between 3-4 iterations
+        const subdivided = subdividePattern(initial, iterations);
+        
+        // Apply random color scheme on each generation
+        colorScheme = Math.floor(Math.random() * colorSchemes.length);
+        
         drawTiling(subdivided);
+        resetView(); // Reset view to show the new pattern clearly
     }
 
     function toggleColors() {
