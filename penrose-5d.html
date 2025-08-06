@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>5D Penrose Tiling - Spacetime</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+    body {
+        background: radial-gradient(ellipse at center, #0a0e27 0%, #000000 100%);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        padding: 10px;
+        overflow: hidden;
+    }
+    
+    /* Animated background stars */
+    body::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: 
+            radial-gradient(2px 2px at 20% 30%, white, transparent),
+            radial-gradient(2px 2px at 60% 70%, white, transparent),
+            radial-gradient(1px 1px at 50% 50%, white, transparent);
+        background-size: 200% 200%;
+        animation: stars 120s linear infinite;
+        opacity: 0.3;
+    }
+    
+    @keyframes stars {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-100%); }
+    }
+    
+    .container {
+        background: rgba(10, 14, 39, 0.8);
+        border: 1px solid rgba(147, 51, 234, 0.3);
+        backdrop-filter: blur(20px);
+        border-radius: 20px;
+        box-shadow: 
+            0 20px 60px rgba(147, 51, 234, 0.3),
+            inset 0 0 40px rgba(147, 51, 234, 0.1);
+        padding: 20px;
+        width: 100%;
+        max-width: 1200px;
+        display: flex;
+        flex-direction: column;
+        max-height: 95vh;
+        position: relative;
+        z-index: 1;
+    }
+    
+    h1 {
+        text-align: center;
+        color: #fff;
+        margin-bottom: 5px;
+        font-size: clamp(20px, 4vw, 28px);
+        text-shadow: 
+            0 0 20px rgba(147, 51, 234, 0.8),
+            0 0 40px rgba(79, 172, 254, 0.6);
+        animation: pulse 2s ease-in-out infinite;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.9; }
+    }
+    
+    .subtitle {
+        text-align: center;
+        color: rgba(255,255,255,0.7);
+        margin-bottom: 15px;
+        font-size: clamp(12px, 2vw, 14px);
+    }
+    
+    #canvas-container {
+        position: relative;
+        width: 100%;
+        flex: 1;
+        min-height: 300px;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #000;
+        border: 1px solid rgba(147, 51, 234, 0.3);
+        box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+    }
+    
+    canvas {
+        display: block;
+        width: 100%;
+        height: 100%;
+        cursor: grab;
+    }
+    
+    canvas:active {
+        cursor: grabbing;
+    }
+    
+    .controls {
+        display: flex;
+        gap: 10px;
+        justify-content: center;
+        margin-top: 15px;
+        flex-wrap: wrap;
+    }
+    
+    button {
+        background: linear-gradient(135deg, rgba(147, 51, 234, 0.8) 0%, rgba(79, 172, 254, 0.8) 100%);
+        color: white;
+        border: 1px solid rgba(255,255,255,0.2);
+        padding: 8px 16px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: clamp(12px, 2vw, 14px);
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(147, 51, 234, 0.4);
+        white-space: nowrap;
+        flex: 0 1 auto;
+        backdrop-filter: blur(10px);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    button::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 0;
+        height: 0;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.3);
+        transform: translate(-50%, -50%);
+        transition: width 0.6s, height 0.6s;
+    }
+    
+    button:hover::before {
+        width: 100%;
+        height: 100%;
+    }
+    
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(147, 51, 234, 0.6);
+    }
+    
+    button.active {
+        background: linear-gradient(135deg, rgba(240,147,251,0.9) 0%, rgba(245,87,108,0.9) 100%);
+        box-shadow: 0 4px 20px rgba(240,147,251,0.6);
+        animation: activeGlow 1s ease-in-out infinite;
+    }
+    
+    @keyframes activeGlow {
+        0%, 100% { box-shadow: 0 4px 20px rgba(240,147,251,0.6); }
+        50% { box-shadow: 0 4px 30px rgba(240,147,251,0.9); }
+    }
+    
+    .slider-group {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 10px;
+        flex-wrap: wrap;
+    }
+    
+    .slider-container {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(147, 51, 234, 0.1);
+        padding: 8px 15px;
+        border-radius: 20px;
+        border: 1px solid rgba(147, 51, 234, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .slider-container:hover {
+        background: rgba(147, 51, 234, 0.2);
+        box-shadow: 0 0 20px rgba(147, 51, 234, 0.3);
+    }
+    
+    label {
+        color: rgba(255,255,255,0.9);
+        font-size: 12px;
+        min-width: 60px;
+        text-shadow: 0 0 5px rgba(147, 51, 234, 0.5);
+    }
+    
+    input[type="range"] {
+        width: 100px;
+        height: 4px;
+        border-radius: 2px;
+        background: linear-gradient(to right, #9333ea, #4facfe);
+        outline: none;
+        -webkit-appearance: none;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: white;
+        box-shadow: 0 0 10px rgba(147, 51, 234, 0.8);
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+    
+    input[type="range"]::-webkit-slider-thumb:hover {
+        transform: scale(1.2);
+        box-shadow: 0 0 15px rgba(147, 51, 234, 1);
+    }
+    
+    input[type="range"]::-moz-range-thumb {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: white;
+        box-shadow: 0 0 10px rgba(147, 51, 234, 0.8);
+        cursor: pointer;
+        border: none;
+    }
+    
+    .dimension-indicator {
+        display: inline-block;
+        padding: 2px 8px;
+        background: linear-gradient(135deg, #9333ea, #4facfe);
+        border-radius: 10px;
+        margin-left: 5px;
+        font-size: 11px;
+        animation: dimensionPulse 3s ease-in-out infinite;
+    }
+    
+    @keyframes dimensionPulse {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.05); }
+    }
+    
+    .info {
+        text-align: center;
+        color: rgba(255,255,255,0.7);
+        font-size: clamp(11px, 2vw, 12px);
+        margin-top: 10px;
+        padding: 0 10px;
+    }
+    
+    .stats {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        color: white;
+        font-size: 11px;
+        background: rgba(0,0,0,0.7);
+        padding: 5px 10px;
+        border-radius: 5px;
+        font-family: monospace;
+        border: 1px solid rgba(147, 51, 234, 0.3);
+    }
+    
+    .dimension-displays {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .dimension-display {
+        color: white;
+        font-size: 12px;
+        background: linear-gradient(135deg, rgba(147, 51, 234, 0.8) 0%, rgba(79, 172, 254, 0.8) 100%);
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-weight: bold;
+        border: 1px solid rgba(255,255,255,0.3);
+        box-shadow: 0 2px 10px rgba(147, 51, 234, 0.5);
+        min-width: 80px;
+        text-align: center;
+    }
+    
+    .time-display {
+        background: linear-gradient(135deg, rgba(255, 107, 107, 0.8) 0%, rgba(255, 193, 7, 0.8) 100%);
+        animation: timeGlow 1s ease-in-out infinite;
+    }
+    
+    @keyframes timeGlow {
+        0%, 100% { box-shadow: 0 2px 10px rgba(255, 107, 107, 0.5); }
+        50% { box-shadow: 0 2px 20px rgba(255, 193, 7, 0.8); }
+    }
+    
+    .timeline {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 90%;
+        max-width: 400px;
+        height: 40px;
+        background: rgba(0,0,0,0.7);
+        border: 1px solid rgba(147, 51, 234, 0.3);
+        border-radius: 20px;
+        padding: 5px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .timeline-track {
+        flex: 1;
+        height: 4px;
+        background: rgba(147, 51, 234, 0.3);
+        border-radius: 2px;
+        position: relative;
+        margin: 0 10px;
+    }
+    
+    .timeline-progress {
+        position: absolute;
+        height: 100%;
+        background: linear-gradient(to right, #9333ea, #4facfe);
+        border-radius: 2px;
+        width: 50%;
+        transition: width 0.3s ease;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        top: -8px;
+        width: 20px;
+        height: 20px;
+        background: white;
+        border-radius: 50%;
+        box-shadow: 0 0 10px rgba(147, 51, 234, 0.8);
+        left: 50%;
+        transform: translateX(-50%);
+        cursor: grab;
+    }
+    
+    .time-controls {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .time-button {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: rgba(147, 51, 234, 0.8);
+        border: 1px solid rgba(255,255,255,0.3);
+        color: white;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
+    
+    .time-button:hover {
+        background: rgba(147, 51, 234, 1);
+        transform: scale(1.1);
+    }
+    
+    /* Mobile optimizations */
+    @media (max-width: 640px) {
+        .container {
+            padding: 15px;
+        }
+        
+        .controls {
+            gap: 8px;
+        }
+        
+        button {
+            padding: 10px 14px;
+            font-size: 12px;
+        }
+        
+        input[type="range"] {
+            width: 80px;
+        }
+        
+        .dimension-displays {
+            flex-direction: row;
+            top: 40px;
+        }
+        
+        .dimension-display {
+            font-size: 10px;
+            padding: 4px 8px;
+            min-width: 60px;
+        }
+    }
+</style>
+
+</head>
+<body>
+    <div class="container">
+        <h1>5D Penrose Spacetime <span class="dimension-indicator">5D→3D</span></h1>
+        <div class="subtitle">Temporal Hyperdimensional Projection with Chronological Navigation</div>
+
+    <div id="canvas-container">
+        <div class="stats" id="stats">FPS: 60 | Tiles: 0</div>
+        <div class="dimension-displays">
+            <div class="dimension-display">W: <span id="wValue">0.00</span></div>
+            <div class="dimension-display time-display">T: <span id="tValue">0.00</span></div>
+        </div>
+        
+        <div class="timeline">
+            <div class="time-controls">
+                <div class="time-button" onclick="toggleTimePlay()">▶</div>
+            </div>
+            <div class="timeline-track">
+                <div class="timeline-progress" id="timelineProgress"></div>
+                <div class="timeline-marker" id="timelineMarker"></div>
+            </div>
+            <div class="time-controls">
+                <div class="time-button" onclick="resetTime()">↺</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <button onclick="generateTiling()">Regenerate</button>
+        <button onclick="toggleColors()">Colors</button>
+        <button onclick="toggleAutoRotate()" id="rotateBtn">Rotate</button>
+        <button onclick="toggleTimeMode()" id="timeModeBtn" class="active">Time Mode</button>
+        <button onclick="toggleTrails()" id="trailsBtn">Time Trails</button>
+        <button onclick="resetView()">Reset All</button>
+    </div>
+    
+    <div class="slider-group">
+        <div class="slider-container">
+            <label>W-Axis:</label>
+            <input type="range" id="wSlider" min="-100" max="100" value="0" step="1">
+        </div>
+        <div class="slider-container">
+            <label>Time Flow:</label>
+            <input type="range" id="timeSpeedSlider" min="0" max="100" value="50" step="1">
+        </div>
+        <div class="slider-container">
+            <label>Entropy:</label>
+            <input type="range" id="entropySlider" min="0" max="100" value="0" step="1">
+        </div>
+    </div>
+    
+    <div class="info">
+        Navigate 5D spacetime • Time controls past/future • W-axis for 4th spatial dimension • Entropy affects temporal chaos
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+    // Global variables
+    let scene, camera, renderer;
+    let rhombiMeshes = [];
+    let timeMeshes = []; // Store past/future states
+    let trailMeshes = [];
+    let autoRotate = false;
+    let timeMode = true;
+    let showTrails = false;
+    let timePlaying = false;
+    let wValue = 0;
+    let timeValue = 0;
+    let timeSpeed = 0.5;
+    let entropy = 0;
+    let colorScheme = 0;
+    let frameCount = 0;
+    let lastTime = performance.now();
+    
+    const PHI = (1 + Math.sqrt(5)) / 2;
+    const MAX_TIME_STATES = 10;
+    
+    const colorSchemes = [
+        { name: 'Spacetime', colors: generateSpacetime },
+        { name: 'Chronos', colors: generateChronos },
+        { name: 'Temporal Flux', colors: generateTemporalFlux },
+        { name: 'Causality', colors: generateCausality },
+        { name: 'Quantum Time', colors: generateQuantumTime }
+    ];
+    
+    // 5D color generation functions
+    function generateSpacetime(x, y, z, w, t, index, total) {
+        const spaceComponent = Math.sqrt(x*x + y*y + z*z) / 300;
+        const timeComponent = (Math.sin(t * 0.05) + 1) / 2;
+        const wComponent = (w + 100) / 200;
+        
+        const hue = (spaceComponent * 180 + timeComponent * 180) % 360;
+        const saturation = 70 + wComponent * 30;
+        const lightness = 40 + Math.sin(t * 0.1 + index * 0.1) * 20;
+        
+        return new THREE.Color(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+    }
+    
+    function generateChronos(x, y, z, w, t, index, total) {
+        // Past is blue, present is white, future is red
+        const timeFactor = Math.sin(t * 0.05);
+        let r, g, b;
+        
+        if (timeFactor < -0.3) {
+            // Past - blue tones
+            r = 0.2;
+            g = 0.3;
+            b = 0.8 + timeFactor * 0.2;
+        } else if (timeFactor > 0.3) {
+            // Future - red tones
+            r = 0.8 + timeFactor * 0.2;
+            g = 0.3;
+            b = 0.2;
+        } else {
+            // Present - white/bright
+            const brightness = 1 - Math.abs(timeFactor);
+            r = g = b = 0.7 + brightness * 0.3;
+        }
+        
+        const wModulation = (w + 100) / 200;
+        return new THREE.Color(r * wModulation, g * wModulation, b * wModulation);
+    }
+    
+    function generateTemporalFlux(x, y, z, w, t, index, total) {
+        const time = performance.now() * 0.001;
+        const flux = Math.sin(time * 2 + t * 0.1 + index * 0.05);
+        const angle = Math.atan2(y, x);
+        
+        const hue = ((angle + Math.PI) / (2 * Math.PI) * 360 + flux * 60 + t) % 360;
+        const saturation = 80 + Math.sin(w * 0.01) * 20;
+        const lightness = 50 + flux * 20;
+        
+        return new THREE.Color(`hsl(${hue}, ${saturation}%, ${lightness}%)`);
+    }
+    
+    function generateCausality(x, y, z, w, t, index, total) {
+        // Create light cones effect
+        const distance = Math.sqrt(x*x + y*y + z*z);
+        const lightCone = distance - Math.abs(t * 10);
+        const inCone = Math.abs(lightCone) < 50;
+        
+        if (inCone) {
+            // Inside light cone - causally connected
+            const intensity = 1 - Math.abs(lightCone) / 50;
+            return new THREE.Color(intensity, intensity * 0.8, intensity * 0.6);
+        } else {
+            // Outside light cone - causally disconnected
+            const darkness = Math.min(Math.abs(lightCone) / 200, 0.8);
+            return new THREE.Color(0.1 * (1-darkness), 0.1 * (1-darkness), 0.2 * (1-darkness));
+        }
+    }
+    
+    function generateQuantumTime(x, y, z, w, t, index, total) {
+        // Quantum superposition of time states
+        const superposition = Math.sin(t * 0.1) * Math.cos(w * 0.01) * Math.sin(index * 0.2);
+        const collapse = Math.random() < 0.01; // Random quantum collapse
+        
+        if (collapse) {
+            return new THREE.Color(1, 1, 1); // White flash on collapse
+        }
+        
+        const r = (Math.sin(superposition * 2) + 1) / 2;
+        const g = (Math.sin(superposition * 3 + Math.PI/3) + 1) / 2;
+        const b = (Math.sin(superposition * 4 + 2*Math.PI/3) + 1) / 2;
+        
+        return new THREE.Color(r, g, b);
+    }
+    
+    // Initialize Three.js
+    function init() {
+        // Scene
+        scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x000000, 0.002);
+        
+        // Camera
+        const container = document.getElementById('canvas-container');
+        const aspect = container.clientWidth / container.clientHeight;
+        camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 2000);
+        camera.position.set(0, 200, 400);
+        
+        // Renderer
+        renderer = new THREE.WebGLRenderer({ 
+            antialias: true, 
+            alpha: true,
+            preserveDrawingBuffer: true 
+        });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        container.appendChild(renderer.domElement);
+        
+        // Post-processing for time effects
+        renderer.autoClear = false;
+        
+        // Controls
+        setupControls();
+        
+        // Lights
+        setupLights();
+        
+        // Create time corridor
+        createTimeCorridor();
+        
+        // Generate initial tiling
+        generateTiling();
+        
+        // Event listeners
+        setupEventListeners();
+        
+        // Start animation
+        animate();
+    }
+    
+    function setupControls() {
+        const canvas = renderer.domElement;
+        let isDragging = false;
+        let previousMousePosition = { x: 0, y: 0 };
+        let rotation = { x: -0.5, y: 0 };
+        let distance = 400;
+        
+        canvas.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+        });
+        
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            
+            const deltaMove = {
+                x: e.clientX - previousMousePosition.x,
+                y: e.clientY - previousMousePosition.y
+            };
+            
+            rotation.y += deltaMove.x * 0.01;
+            rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotation.x - deltaMove.y * 0.01));
+            
+            previousMousePosition = { x: e.clientX, y: e.clientY };
+            updateCamera();
+        });
+        
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+        
+        canvas.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            distance = Math.max(50, Math.min(1000, distance + e.deltaY * 0.5));
+            updateCamera();
+        });
+        
+        // Timeline interaction
+        const timelineMarker = document.getElementById('timelineMarker');
+        let isDraggingTime = false;
+        
+        timelineMarker.addEventListener('mousedown', (e) => {
+            isDraggingTime = true;
+            e.stopPropagation();
+        });
+        
+        document.addEventListener('mousemove', (e) => {
+            if (!isDraggingTime) return;
+            
+            const timeline = document.querySelector('.timeline-track');
+            const rect = timeline.getBoundingClientRect();
+            const x = Math.max(0, Math.min(rect.width, e.clientX - rect.left));
+            const percent = x / rect.width;
+            
+            timeValue = (percent - 0.5) * 200; // -100 to 100
+            updateTimelineDisplay();
+        });
+        
+        document.addEventListener('mouseup', () => {
+            isDraggingTime = false;
+        });
+        
+        // Touch controls
+        let touches = [];
+        let lastTouchDistance = 0;
+        
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            touches = Array.from(e.touches);
+            
+            if (touches.length === 1) {
+                previousMousePosition = { x: touches[0].clientX, y: touches[0].clientY };
+            } else if (touches.length === 2) {
+                const dx = touches[0].clientX - touches[1].clientX;
+                const dy = touches[0].clientY - touches[1].clientY;
+                lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
+            }
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            touches = Array.from(e.touches);
+            
+            if (touches.length === 1) {
+                const deltaMove = {
+                    x: touches[0].clientX - previousMousePosition.x,
+                    y: touches[0].clientY - previousMousePosition.y
+                };
+                
+                rotation.y += deltaMove.x * 0.01;
+                rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotation.x - deltaMove.y * 0.01));
+                
+                previousMousePosition = { x: touches[0].clientX, y: touches[0].clientY };
+                updateCamera();
+            } else if (touches.length === 2) {
+                const dx = touches[0].clientX - touches[1].clientX;
+                const dy = touches[0].clientY - touches[1].clientY;
+                const touchDistance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (lastTouchDistance > 0) {
+                    const scale = touchDistance / lastTouchDistance;
+                    distance = Math.max(50, Math.min(1000, distance / scale));
+                    updateCamera();
+                }
+                
+                lastTouchDistance = touchDistance;
+            }
+        });
+        
+        window.updateCamera = function() {
+            camera.position.x = distance * Math.sin(rotation.y) * Math.cos(rotation.x);
+            camera.position.y = distance * Math.sin(rotation.x);
+            camera.position.z = distance * Math.cos(rotation.y) * Math.cos(rotation.x);
+            camera.lookAt(0, 0, 0);
+        };
+        
+        window.resetView = function() {
+            rotation = { x: -0.5, y: 0 };
+            distance = 400;
+            wValue = 0;
+            timeValue = 0;
+            document.getElementById('wSlider').value = 0;
+            updateTimelineDisplay();
+            updateCamera();
+        };
+        
+        updateCamera();
+    }
+    
+    function setupLights() {
+        // Ambient light
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.2);
+        scene.add(ambientLight);
+        
+        // Time-based directional light
+        const sunLight = new THREE.DirectionalLight(0xffd700, 0.6);
+        sunLight.position.set(100, 200, 0);
+        sunLight.userData.isTimeBased = true;
+        scene.add(sunLight);
+        
+        // Past light (blue)
+        const pastLight = new THREE.PointLight(0x4169e1, 0.4, 500);
+        pastLight.position.set(-200, 100, 0);
+        scene.add(pastLight);
+        
+        // Future light (red)
+        const futureLight = new THREE.PointLight(0xff6b6b, 0.4, 500);
+        futureLight.position.set(200, 100, 0);
+        scene.add(futureLight);
+        
+        // Present light (white)
+        const presentLight = new THREE.PointLight(0xffffff, 0.8, 300);
+        presentLight.position.set(0, 150, 0);
+        scene.add(presentLight);
+    }
+    
+    function createTimeCorridor() {
+        // Create visual representation of time dimension
+        const geometry = new THREE.CylinderGeometry(300, 300, 1000, 32, 1, true);
+        const material = new THREE.MeshBasicMaterial({
+            color: 0x9333ea,
+            transparent: true,
+            opacity: 0.05,
+            side: THREE.DoubleSide,
+            wireframe: true
+        });
+        
+        const corridor = new THREE.Mesh(geometry, material);
+        corridor.rotation.x = Math.PI / 2;
+        scene.add(corridor);
+    }
+    
+    class Rhombus5D {
+        constructor(type, x, y, z, w, t, angle, size) {
+            this.type = type;
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.w = w;
+            this.t = t; // Time dimension
+            this.angle = angle;
+            this.size = size;
+            this.birthTime = performance.now();
+        }
+        
+        project3D(wOffset, timeOffset) {
+            // Project from 5D to 3D
+            const wScale = 1 / (1 - (this.w + wOffset) / 500);
+            const timeFactor = Math.exp(-(this.t - timeOffset) * (this.t - timeOffset) / 1000);
+            
+            return {
+                x: this.x * wScale,
+                y: this.y * wScale + (this.t - timeOffset) * 0.5, // Time affects Y position
+                z: this.z * wScale,
+                opacity: timeFactor // Tiles fade based on temporal distance
+            };
+        }
+        
+        getPoints2D() {
+            const angle1 = this.type === 'thick' ? 72 * Math.PI / 180 : 36 * Math.PI / 180;
+            const points = [];
+            
+            points.push([this.x, this.y]);
+            points.push([
+                this.x + this.size * Math.cos(this.angle),
+                this.y + this.size * Math.sin(this.angle)
+            ]);
+            points.push([
+                this.x + this.size * Math.cos(this.angle) + this.size * Math.cos(this.angle + angle1),
+                this.y + this.size * Math.sin(this.angle) + this.size * Math.sin(this.angle + angle1)
+            ]);
+            points.push([
+                this.x + this.size * Math.cos(this.angle + angle1),
+                this.y + this.size * Math.sin(this.angle + angle1)
+            ]);
+            
+            return points;
+        }
+        
+        subdivide() {
+            const newRhombi = [];
+            const s = this.size / PHI;
+            const timeStep = 10; // Time evolution per subdivision
+            
+            if (this.type === 'thick') {
+                const a1 = this.angle;
+                newRhombi.push(new Rhombus5D('thick', this.x, this.y, this.z, this.w, this.t + timeStep, a1, s));
+                newRhombi.push(new Rhombus5D('thin', 
+                    this.x + s * Math.cos(a1), 
+                    this.y + s * Math.sin(a1),
+                    this.z + Math.sin(a1) * 10,
+                    this.w + Math.cos(a1) * 10,
+                    this.t - timeStep,
+                    a1 + 144 * Math.PI / 180, s));
+                newRhombi.push(new Rhombus5D('thick', 
+                    this.x + this.size * Math.cos(a1), 
+                    this.y + this.size * Math.sin(a1),
+                    this.z - Math.sin(a1) * 10,
+                    this.w - Math.cos(a1) * 10,
+                    this.t,
+                    a1 + 108 * Math.PI / 180, s));
+            } else {
+                const a1 = this.angle;
+                newRhombi.push(new Rhombus5D('thin', this.x, this.y, this.z, this.w, this.t + timeStep, a1, s));
+                newRhombi.push(new Rhombus5D('thick', 
+                    this.x + s * Math.cos(a1), 
+                    this.y + s * Math.sin(a1),
+                    this.z + Math.cos(a1) * 10,
+                    this.w - Math.sin(a1) * 10,
+                    this.t - timeStep,
+                    a1 + 72 * Math.PI / 180, s));
+            }
+            
+            // Add entropy effect
+            if (entropy > 0) {
+                newRhombi.forEach(r => {
+                    r.t += (Math.random() - 0.5) * entropy;
+                    r.w += (Math.random() - 0.5) * entropy * 0.5;
+                });
+            }
+            
+            return newRhombi;
+        }
+        
+        createMesh(index, total) {
+            const points2D = this.getPoints2D();
+            const shape = new THREE.Shape();
+            
+            shape.moveTo(points2D[0][0], points2D[0][1]);
+            for (let i = 1; i < points2D.length; i++) {
+                shape.lineTo(points2D[i][0], points2D[i][1]);
+            }
+            shape.closePath();
+            
+            const geometry = new THREE.ShapeGeometry(shape);
+            
+            // Get color based on 5D position
+            const scheme = colorSchemes[colorScheme];
+            const color = scheme.colors(this.x, this.y, this.z, this.w, this.t, index, total);
+            
+            const material = new THREE.MeshPhongMaterial({
+                color: color,
+                emissive: color,
+                emissiveIntensity: 0.15,
+                transparent: true,
+                opacity: 0.8,
+                side: THREE.DoubleSide
+            });
+            
+            const mesh = new THREE.Mesh(geometry, material);
+            mesh.userData.rhombus5D = this;
+            mesh.userData.index = index;
+            mesh.userData.total = total;
+            
+            // Initial 3D position
+            const pos3D = this.project3D(0, 0);
+            mesh.position.set(pos3D.x, pos3D.y, pos3D.z);
+            
+            return mesh;
+        }
+    }
+    
+    function generateInitialTiling() {
+        const rhombi = [];
+        const numSectors = 5;
+        const initialSize = 50;
+        
+        const randomConfig = Math.floor(Math.random() * 3);
+        const randomRotation = Math.random() * 360;
+        
+        for (let i = 0; i < numSectors; i++) {
+            const baseAngle = (i * 72 - 90 + randomRotation) * Math.PI / 180;
+            const wOffset = Math.sin(i * Math.PI / 2.5) * 50;
+            const tOffset = Math.cos(i * Math.PI / 2.5) * 30;
+            
+            if (randomConfig === 0) {
+                rhombi.push(new Rhombus5D('thick', 0, 0, 0, wOffset, tOffset, baseAngle, initialSize));
+                rhombi.push(new Rhombus5D('thick', 0, 0, 0, -wOffset, -tOffset, baseAngle + 36 * Math.PI / 180, initialSize));
+            } else if (randomConfig === 1) {
+                rhombi.push(new Rhombus5D('thick', 0, 0, 0, wOffset, tOffset, baseAngle, initialSize));
+                rhombi.push(new Rhombus5D('thin', 0, 0, 0, -wOffset, -tOffset, baseAngle + 36 * Math.PI / 180, initialSize * 0.8));
+            } else {
+                const offset = Math.random() * 20 - 10;
+                rhombi.push(new Rhombus5D('thick', 0, 0, 0, wOffset, tOffset, baseAngle + offset * Math.PI / 180, initialSize));
+                if (i % 2 === 0) {
+                    rhombi.push(new Rhombus5D('thin', 0, 0, 0, -wOffset, -tOffset, baseAngle + 36 * Math.PI / 180, initialSize * 0.9));
+                } else {
+                    rhombi.push(new Rhombus5D('thick', 0, 0, 0, wOffset * 0.5, tOffset * 0.5, baseAngle + 36 * Math.PI / 180, initialSize));
+                }
+            }
+        }
+        
+        return rhombi;
+    }
+    
+    function subdividePattern(rhombi, iterations) {
+        let current = rhombi;
+        
+        for (let i = 0; i < iterations; i++) {
+            const next = [];
+            for (const rhombus of current) {
+                next.push(...rhombus.subdivide());
+            }
+            current = next;
+        }
+        
+        return current;
+    }
+    
+    function generateTiling() {
+        // Clear existing meshes
+        rhombiMeshes.forEach(mesh => {
+            scene.remove(mesh);
+            mesh.geometry.dispose();
+            mesh.material.dispose();
+        });
+        rhombiMeshes = [];
+        
+        // Clear time trails
+        trailMeshes.forEach(mesh => {
+            scene.remove(mesh);
+            mesh.geometry.dispose();
+            mesh.material.dispose();
+        });
+        trailMeshes = [];
+        
+        // Generate new pattern
+        const initial = generateInitialTiling();
+        const iterations = window.innerWidth < 640 ? 2 : 3;
+        const subdivided = subdividePattern(initial, iterations);
+        
+        // Random color scheme
+        colorScheme = Math.floor(Math.random() * colorSchemes.length);
+        
+        // Create meshes
+        subdivided.forEach((rhombus, index) => {
+            const mesh = rhombus.createMesh(index, subdivided.length);
+            rhombiMeshes.push(mesh);
+            scene.add(mesh);
+        });
+        
+        // Update stats
+        const schemeName = colorSchemes[colorScheme].name;
+        document.getElementById('stats').textContent = `FPS: 60 | Tiles: ${rhombiMeshes.length} | ${schemeName}`;
+    }
+    
+    function updateProjections() {
+        rhombiMeshes.forEach(mesh => {
+            const rhombus = mesh.userData.rhombus5D;
+            if (rhombus) {
+                const pos3D = rhombus.project3D(wValue, timeValue);
+                
+                // Smooth transition
+                mesh.position.x += (pos3D.x - mesh.position.x) * 0.1;
+                mesh.position.y += (pos3D.y - mesh.position.y) * 0.1;
+                mesh.position.z += (pos3D.z - mesh.position.z) * 0.1;
+                
+                // Update opacity based on temporal distance
+                mesh.material.opacity = pos3D.opacity * 0.8;
+                
+                // Update color if in time mode
+                if (timeMode) {
+                    const scheme = colorSchemes[colorScheme];
+                    const color = scheme.colors(
+                        rhombus.x, rhombus.y, rhombus.z, 
+                        rhombus.w + wValue,
+                        rhombus.t + timeValue,
+                        mesh.userData.index, 
+                        mesh.userData.total
+                    );
+                    mesh.material.color = color;
+                    mesh.material.emissive = color;
+                }
+                
+                // Create time trails
+                if (showTrails && Math.random() < 0.01) {
+                    createTrail(mesh);
+                }
+            }
+        });
+        
+        // Update time-based lights
+        scene.traverse(obj => {
+            if (obj.userData.isTimeBased) {
+                const angle = timeValue * 0.01;
+                obj.position.x = Math.cos(angle) * 200;
+                obj.position.z = Math.sin(angle) * 200;
+            }
+        });
+    }
+    
+    function createTrail(mesh) {
+        const trailGeometry = mesh.geometry.clone();
+        const trailMaterial = mesh.material.clone();
+        trailMaterial.opacity = 0.2;
+        trailMaterial.emissiveIntensity = 0.5;
+        
+        const trail = new THREE.Mesh(trailGeometry, trailMaterial);
+        trail.position.copy(mesh.position);
+        trail.rotation.copy(mesh.rotation);
+        trail.scale.copy(mesh.scale);
+        trail.userData.birthTime = performance.now();
+        
+        trailMeshes.push(trail);
+        scene.add(trail);
+        
+        // Limit trail count
+        if (trailMeshes.length > 50) {
+            const oldTrail = trailMeshes.shift();
+            scene.remove(oldTrail);
+            oldTrail.geometry.dispose();
+            oldTrail.material.dispose();
+        }
+    }
+    
+    function updateTimelineDisplay() {
+        const progress = (timeValue + 100) / 200; // 0 to 1
+        document.getElementById('timelineProgress').style.width = `${progress * 100}%`;
+        document.getElementById('timelineMarker').style.left = `${progress * 100}%`;
+        document.getElementById('tValue').textContent = timeValue.toFixed(2);
+    }
+    
+    window.toggleTimePlay = function() {
+        timePlaying = !timePlaying;
+        const playBtn = document.querySelector('.time-button');
+        playBtn.textContent = timePlaying ? '⏸' : '▶';
+    };
+    
+    window.resetTime = function() {
+        timeValue = 0;
+        timePlaying = false;
+        updateTimelineDisplay();
+        document.querySelector('.time-button').textContent = '▶';
+    };
+    
+    window.toggleColors = function() {
+        colorScheme = (colorScheme + 1) % colorSchemes.length;
+        const schemeName = colorSchemes[colorScheme].name;
+        document.getElementById('stats').textContent = `FPS: 60 | Tiles: ${rhombiMeshes.length} | ${schemeName}`;
+    };
+    
+    window.toggleAutoRotate = function() {
+        autoRotate = !autoRotate;
+        document.getElementById('rotateBtn').classList.toggle('active');
+    };
+    
+    window.toggleTimeMode = function() {
+        timeMode = !timeMode;
+        document.getElementById('timeModeBtn').classList.toggle('active');
+    };
+    
+    window.toggleTrails = function() {
+        showTrails = !showTrails;
+        document.getElementById('trailsBtn').classList.toggle('active');
+        
+        if (!showTrails) {
+            // Clear existing trails
+            trailMeshes.forEach(mesh => {
+                scene.remove(mesh);
+                mesh.geometry.dispose();
+                mesh.material.dispose();
+            });
+            trailMeshes = [];
+        }
+    };
+    
+    function setupEventListeners() {
+        // W-axis slider
+        document.getElementById('wSlider').addEventListener('input', (e) => {
+            wValue = parseFloat(e.target.value);
+            document.getElementById('wValue').textContent = wValue.toFixed(2);
+        });
+        
+        // Time speed slider
+        document.getElementById('timeSpeedSlider').addEventListener('input', (e) => {
+            timeSpeed = parseFloat(e.target.value) / 100;
+        });
+        
+        // Entropy slider
+        document.getElementById('entropySlider').addEventListener('input', (e) => {
+            entropy = parseFloat(e.target.value);
+        });
+        
+        // Window resize
+        window.addEventListener('resize', () => {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+    }
+    
+    function animate() {
+        requestAnimationFrame(animate);
+        
+        const time = performance.now() * 0.001;
+        
+        // Auto time progression
+        if (timePlaying) {
+            timeValue += timeSpeed;
+            if (timeValue > 100) timeValue = -100;
+            updateTimelineDisplay();
+        }
+        
+        // Update 5D projections
+        updateProjections();
+        
+        // Auto rotation
+        if (autoRotate) {
+            scene.rotation.y += 0.003;
+        }
+        
+        // Update trail opacity
+        trailMeshes.forEach(trail => {
+            const age = performance.now() - trail.userData.birthTime;
+            trail.material.opacity = Math.max(0, 0.2 - age / 5000);
+            if (trail.material.opacity <= 0) {
+                scene.remove(trail);
+                trail.geometry.dispose();
+                trail.material.dispose();
+            }
+        });
+        
+        // Clear and render with motion blur effect
+        if (showTrails) {
+            renderer.setClearAlpha(0.1);
+        } else {
+            renderer.setClearAlpha(1);
+        }
+        renderer.clear();
+        
+        // Update FPS
+        frameCount++;
+        const currentTime = performance.now();
+        if (currentTime - lastTime >= 1000) {
+            const fps = Math.round(frameCount * 1000 / (currentTime - lastTime));
+            const schemeName = colorSchemes[colorScheme].name;
+            document.getElementById('stats').textContent = `FPS: ${fps} | Tiles: ${rhombiMeshes.length} | ${schemeName}`;
+            frameCount = 0;
+            lastTime = currentTime;
+        }
+        
+        renderer.render(scene, camera);
+    }
+    
+    // Initialize on load
+    init();
+</script>
+
+</body>
+</html>
