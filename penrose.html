@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penrose Tiling</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+        }
+
+```
+    .container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        padding: 30px;
+        max-width: 90vw;
+        max-height: 90vh;
+    }
+    
+    h1 {
+        text-align: center;
+        color: #333;
+        margin-bottom: 10px;
+        font-size: 28px;
+    }
+    
+    .subtitle {
+        text-align: center;
+        color: #666;
+        margin-bottom: 20px;
+        font-size: 14px;
+    }
+    
+    svg {
+        display: block;
+        margin: 0 auto;
+        cursor: move;
+    }
+    
+    .controls {
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        margin-top: 20px;
+        flex-wrap: wrap;
+    }
+    
+    button {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 25px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    }
+    
+    button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+    }
+    
+    .info {
+        text-align: center;
+        color: #666;
+        font-size: 12px;
+        margin-top: 15px;
+    }
+    
+    .tile {
+        stroke: #333;
+        stroke-width: 0.5;
+        transition: fill 0.3s ease;
+    }
+    
+    .tile:hover {
+        filter: brightness(1.2);
+    }
+    
+    .thick {
+        fill: #ff6b6b;
+        fill-opacity: 0.7;
+    }
+    
+    .thin {
+        fill: #4ecdc4;
+        fill-opacity: 0.7;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.8); }
+        to { opacity: 1; transform: scale(1); }
+    }
+    
+    .tile {
+        animation: fadeIn 0.5s ease forwards;
+    }
+</style>
+```
+
+</head>
+<body>
+    <div class="container">
+        <h1>Penrose Tiling</h1>
+        <div class="subtitle">P2 Rhombus Tiling with Golden Ratio Properties</div>
+
+```
+    <svg id="penrose" width="800" height="600" viewBox="-400 -300 800 600">
+        <defs>
+            <pattern id="grid" width="50" height="50" patternUnits="userSpaceOnUse">
+                <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#f0f0f0" stroke-width="0.5"/>
+            </pattern>
+        </defs>
+        <rect x="-400" y="-300" width="800" height="600" fill="url(#grid)"/>
+        <g id="tiles"></g>
+    </svg>
+    
+    <div class="controls">
+        <button onclick="generateTiling()">Regenerate Pattern</button>
+        <button onclick="toggleColors()">Switch Colors</button>
+        <button onclick="zoomIn()">Zoom In</button>
+        <button onclick="zoomOut()">Zoom Out</button>
+        <button onclick="resetView()">Reset View</button>
+    </div>
+    
+    <div class="info">
+        Drag to pan • Scroll to zoom • Penrose tilings are aperiodic (never repeat)
+    </div>
+</div>
+
+<script>
+    const PHI = (1 + Math.sqrt(5)) / 2; // Golden ratio
+    let currentScale = 1;
+    let currentTranslateX = 0;
+    let currentTranslateY = 0;
+    let colorScheme = 0;
+    
+    const colorSchemes = [
+        { thick: '#ff6b6b', thin: '#4ecdc4' },
+        { thick: '#f9ca24', thin: '#6c5ce7' },
+        { thick: '#30336b', thin: '#95afc0' },
+        { thick: '#eb4d4b', thin: '#22a6b3' }
+    ];
+
+    class Rhombus {
+        constructor(type, x, y, angle, size) {
+            this.type = type; // 'thick' or 'thin'
+            this.x = x;
+            this.y = y;
+            this.angle = angle;
+            this.size = size;
+        }
+
+        getPoints() {
+            const angle1 = this.type === 'thick' ? 72 * Math.PI / 180 : 36 * Math.PI / 180;
+            const points = [];
+            
+            points.push([this.x, this.y]);
+            points.push([
+                this.x + this.size * Math.cos(this.angle),
+                this.y + this.size * Math.sin(this.angle)
+            ]);
+            points.push([
+                this.x + this.size * Math.cos(this.angle) + this.size * Math.cos(this.angle + angle1),
+                this.y + this.size * Math.sin(this.angle) + this.size * Math.sin(this.angle + angle1)
+            ]);
+            points.push([
+                this.x + this.size * Math.cos(this.angle + angle1),
+                this.y + this.size * Math.sin(this.angle + angle1)
+            ]);
+            
+            return points;
+        }
+
+        subdivide() {
+            const newRhombi = [];
+            const s = this.size / PHI;
+            
+            if (this.type === 'thick') {
+                // Subdivide thick rhombus
+                const a1 = this.angle;
+                const a2 = this.angle + 72 * Math.PI / 180;
+                
+                newRhombi.push(new Rhombus('thick', this.x, this.y, a1, s));
+                newRhombi.push(new Rhombus('thin', 
+                    this.x + s * Math.cos(a1), 
+                    this.y + s * Math.sin(a1), 
+                    a1 + 144 * Math.PI / 180, s));
+                newRhombi.push(new Rhombus('thick', 
+                    this.x + this.size * Math.cos(a1), 
+                    this.y + this.size * Math.sin(a1), 
+                    a1 + 108 * Math.PI / 180, s));
+            } else {
+                // Subdivide thin rhombus
+                const a1 = this.angle;
+                
+                newRhombi.push(new Rhombus('thin', this.x, this.y, a1, s));
+                newRhombi.push(new Rhombus('thick', 
+                    this.x + s * Math.cos(a1), 
+                    this.y + s * Math.sin(a1), 
+                    a1 + 72 * Math.PI / 180, s));
+            }
+            
+            return newRhombi;
+        }
+    }
+
+    function generateInitialTiling() {
+        const rhombi = [];
+        const numSectors = 5;
+        const initialSize = 100;
+        
+        for (let i = 0; i < numSectors; i++) {
+            const angle = (i * 72 - 90) * Math.PI / 180;
+            rhombi.push(new Rhombus('thick', 0, 0, angle, initialSize));
+            rhombi.push(new Rhombus('thick', 0, 0, angle + 36 * Math.PI / 180, initialSize));
+        }
+        
+        return rhombi;
+    }
+
+    function subdividePattern(rhombi, iterations) {
+        let current = rhombi;
+        
+        for (let i = 0; i < iterations; i++) {
+            const next = [];
+            for (const rhombus of current) {
+                next.push(...rhombus.subdivide());
+            }
+            current = next;
+        }
+        
+        return current;
+    }
+
+    function drawTiling(rhombi) {
+        const svg = document.getElementById('tiles');
+        svg.innerHTML = '';
+        
+        const scheme = colorSchemes[colorScheme];
+        
+        rhombi.forEach((rhombus, index) => {
+            const points = rhombus.getPoints();
+            const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            
+            const pointsStr = points.map(p => `${p[0]},${p[1]}`).join(' ');
+            polygon.setAttribute('points', pointsStr);
+            polygon.setAttribute('class', `tile ${rhombus.type}`);
+            polygon.style.fill = scheme[rhombus.type];
+            polygon.style.animationDelay = `${index * 0.001}s`;
+            
+            svg.appendChild(polygon);
+        });
+    }
+
+    function generateTiling() {
+        const initial = generateInitialTiling();
+        const subdivided = subdividePattern(initial, 4);
+        drawTiling(subdivided);
+    }
+
+    function toggleColors() {
+        colorScheme = (colorScheme + 1) % colorSchemes.length;
+        const scheme = colorSchemes[colorScheme];
+        
+        document.querySelectorAll('.thick').forEach(el => {
+            el.style.fill = scheme.thick;
+        });
+        
+        document.querySelectorAll('.thin').forEach(el => {
+            el.style.fill = scheme.thin;
+        });
+    }
+
+    function updateTransform() {
+        const tiles = document.getElementById('tiles');
+        tiles.setAttribute('transform', 
+            `translate(${currentTranslateX}, ${currentTranslateY}) scale(${currentScale})`);
+    }
+
+    function zoomIn() {
+        currentScale *= 1.2;
+        updateTransform();
+    }
+
+    function zoomOut() {
+        currentScale /= 1.2;
+        updateTransform();
+    }
+
+    function resetView() {
+        currentScale = 1;
+        currentTranslateX = 0;
+        currentTranslateY = 0;
+        updateTransform();
+    }
+
+    // Mouse drag functionality
+    let isDragging = false;
+    let startX, startY;
+
+    const svg = document.getElementById('penrose');
+
+    svg.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        startX = e.clientX - currentTranslateX;
+        startY = e.clientY - currentTranslateY;
+        svg.style.cursor = 'grabbing';
+    });
+
+    svg.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        
+        currentTranslateX = e.clientX - startX;
+        currentTranslateY = e.clientY - startY;
+        updateTransform();
+    });
+
+    svg.addEventListener('mouseup', () => {
+        isDragging = false;
+        svg.style.cursor = 'move';
+    });
+
+    svg.addEventListener('mouseleave', () => {
+        isDragging = false;
+        svg.style.cursor = 'move';
+    });
+
+    // Mouse wheel zoom
+    svg.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        
+        if (e.deltaY < 0) {
+            currentScale *= 1.1;
+        } else {
+            currentScale /= 1.1;
+        }
+        
+        updateTransform();
+    });
+
+    // Initialize
+    generateTiling();
+</script>
+```
+
+</body>
+</html>
