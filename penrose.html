@@ -477,26 +477,29 @@
     }
 
     function savePNG() {
-        // Create a temporary canvas
+        // Create a temporary canvas with 1:1 aspect ratio
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Set canvas size (high resolution for quality)
-        const scale = 2; // 2x resolution for retina displays
-        canvas.width = 1600 * scale;
-        canvas.height = 1200 * scale;
+        // Set canvas size (1:1 ratio, high resolution for quality)
+        const size = 2048; // Square dimensions
+        canvas.width = size;
+        canvas.height = size;
         
-        // Scale context for high DPI
-        ctx.scale(scale, scale);
+        // Clear canvas (transparent background)
+        ctx.clearRect(0, 0, size, size);
         
-        // Translate to center
-        ctx.translate(800, 600);
+        // Translate to center of canvas
+        ctx.translate(size / 2, size / 2);
         
         // Apply current transform
         ctx.scale(currentScale, currentScale);
         ctx.translate(currentTranslateX, currentTranslateY);
         
-        // Get all tiles and draw them
+        // Get current color scheme
+        const scheme = colorSchemes[colorScheme];
+        
+        // Get all tiles and draw them with their actual colors
         const tiles = document.querySelectorAll('.tile');
         tiles.forEach(tile => {
             const points = tile.getAttribute('points').split(' ').map(p => {
@@ -511,11 +514,15 @@
             }
             ctx.closePath();
             
-            // Get the tile's color
-            const fillColor = tile.style.fill || (tile.classList.contains('thick') ? '#ff6b6b' : '#4ecdc4');
-            ctx.fillStyle = fillColor + 'b3'; // Add transparency
+            // Get the tile's actual color from the current scheme
+            const isThick = tile.classList.contains('thick');
+            const fillColor = isThick ? scheme.thick : scheme.thin;
+            
+            // Apply color with the same opacity as displayed
+            ctx.fillStyle = fillColor + 'b3'; // b3 = 70% opacity in hex
             ctx.fill();
             
+            // Draw stroke
             ctx.strokeStyle = '#333333';
             ctx.lineWidth = 0.5;
             ctx.stroke();
@@ -535,29 +542,45 @@
     }
     
     function saveSVG() {
-        // Clone the SVG
-        const svg = document.getElementById('penrose');
-        const clone = svg.cloneNode(true);
+        // Create a new SVG element with 1:1 ratio
+        const svgNS = "http://www.w3.org/2000/svg";
+        const newSvg = document.createElementNS(svgNS, 'svg');
         
-        // Remove the grid background
-        const gridRect = clone.querySelector('rect');
-        if (gridRect) {
-            gridRect.remove();
-        }
+        // Set 1:1 viewBox
+        const size = 800;
+        newSvg.setAttribute('width', size);
+        newSvg.setAttribute('height', size);
+        newSvg.setAttribute('viewBox', `-${size/2} -${size/2} ${size} ${size}`);
+        newSvg.setAttribute('xmlns', svgNS);
         
-        // Set transparent background
-        clone.style.background = 'transparent';
+        // Create a group for the transformed tiles
+        const g = document.createElementNS(svgNS, 'g');
+        g.setAttribute('transform', 
+            `translate(${currentTranslateX}, ${currentTranslateY}) scale(${currentScale})`);
         
-        // Apply current transform to the tiles group
-        const tilesGroup = clone.querySelector('#tiles');
-        const currentTransform = tilesGroup.getAttribute('transform');
-        if (!currentTransform) {
-            tilesGroup.setAttribute('transform', 
-                `translate(${currentTranslateX}, ${currentTranslateY}) scale(${currentScale})`);
-        }
+        // Get current color scheme
+        const scheme = colorSchemes[colorScheme];
+        
+        // Copy all tiles with their colors
+        const tiles = document.querySelectorAll('.tile');
+        tiles.forEach(tile => {
+            const polygon = document.createElementNS(svgNS, 'polygon');
+            polygon.setAttribute('points', tile.getAttribute('points'));
+            
+            // Apply the actual colors
+            const isThick = tile.classList.contains('thick');
+            polygon.setAttribute('fill', isThick ? scheme.thick : scheme.thin);
+            polygon.setAttribute('fill-opacity', '0.7');
+            polygon.setAttribute('stroke', '#333333');
+            polygon.setAttribute('stroke-width', '0.5');
+            
+            g.appendChild(polygon);
+        });
+        
+        newSvg.appendChild(g);
         
         // Get SVG string
-        const svgString = new XMLSerializer().serializeToString(clone);
+        const svgString = new XMLSerializer().serializeToString(newSvg);
         
         // Create blob and download
         const blob = new Blob([svgString], { type: 'image/svg+xml' });
