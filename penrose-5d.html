@@ -87,6 +87,7 @@
         transform: translateX(-50%);
         z-index: 1001;
         margin: 0;
+        transition: opacity 0.3s ease;
     }
     
     .container.fullscreen .subtitle {
@@ -97,24 +98,28 @@
     .container.fullscreen .slider-group,
     .container.fullscreen .info {
         position: absolute;
-        bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
         z-index: 1001;
         margin: 0;
-        background: rgba(10, 14, 39, 0.8);
+        background: rgba(10, 14, 39, 0.9);
         padding: 10px 20px;
         border-radius: 15px;
         border: 1px solid rgba(147, 51, 234, 0.3);
         backdrop-filter: blur(20px);
+        transition: all 0.3s ease;
+    }
+    
+    .container.fullscreen .controls {
+        bottom: 20px;
     }
     
     .container.fullscreen .slider-group {
-        bottom: 80px;
+        bottom: 90px;
     }
     
     .container.fullscreen .info {
-        bottom: 140px;
+        bottom: 160px;
         max-width: 80%;
     }
     
@@ -126,6 +131,21 @@
         height: 100%;
         border-radius: 0;
         margin: 0;
+    }
+    
+    /* Controls hiding functionality */
+    .controls-hidden .controls,
+    .controls-hidden .slider-group,
+    .controls-hidden .info,
+    .controls-hidden h1,
+    .controls-hidden .subtitle {
+        opacity: 0;
+        pointer-events: none;
+    }
+    
+    .controls-hidden .hide-controls-btn {
+        opacity: 1 !important;
+        pointer-events: all !important;
     }
     
     h1 {
@@ -246,6 +266,38 @@
     .fullscreen-btn.active {
         background: linear-gradient(135deg, rgba(255, 152, 0, 0.9) 0%, rgba(255, 193, 7, 0.9) 100%);
         box-shadow: 0 4px 20px rgba(255, 152, 0, 0.6);
+    }
+    
+    /* Hide controls button */
+    .hide-controls-btn {
+        background: linear-gradient(135deg, rgba(156, 39, 176, 0.8) 0%, rgba(233, 30, 99, 0.8) 100%);
+        box-shadow: 0 4px 15px rgba(156, 39, 176, 0.4);
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 1003;
+        display: none;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        font-size: 18px;
+        align-items: center;
+        justify-content: center;
+        padding: 0;
+    }
+    
+    .container.fullscreen .hide-controls-btn {
+        display: flex;
+    }
+    
+    .hide-controls-btn:hover {
+        box-shadow: 0 6px 20px rgba(156, 39, 176, 0.6);
+        transform: translateY(-2px) scale(1.05);
+    }
+    
+    .hide-controls-btn.active {
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.9) 0%, rgba(139, 195, 74, 0.9) 100%);
+        box-shadow: 0 4px 20px rgba(76, 175, 80, 0.6);
     }
     
     .slider-group {
@@ -524,12 +576,24 @@
             font-size: 11px;
         }
         
+        .container.fullscreen .controls {
+            bottom: 15px;
+        }
+        
         .container.fullscreen .slider-group {
-            bottom: 60px;
+            bottom: 70px;
         }
         
         .container.fullscreen .info {
-            bottom: 100px;
+            bottom: 125px;
+        }
+        
+        .hide-controls-btn {
+            top: 15px;
+            right: 15px;
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
         }
     }
 </style>
@@ -561,6 +625,7 @@
         </div>
         
         <div class="fullscreen-hint">Press ESC to exit fullscreen</div>
+        <button class="hide-controls-btn" onclick="toggleControlsVisibility()">👁</button>
     </div>
     
     <div class="controls">
@@ -612,6 +677,7 @@
     let frameCount = 0;
     let lastTime = performance.now();
     let isFullscreen = false;
+    let controlsVisible = true;
     
     const PHI = (1 + Math.sqrt(5)) / 2;
     const MAX_TIME_STATES = 10;
@@ -730,6 +796,7 @@
                 fullscreenBtn.classList.add('active');
                 fullscreenBtn.textContent = 'Exit Fullscreen';
                 isFullscreen = true;
+                controlsVisible = true; // Show controls when entering fullscreen
                 
                 // Resize renderer
                 const containerRect = container.getBoundingClientRect();
@@ -753,9 +820,11 @@
             // Fallback
             setTimeout(() => {
                 container.classList.remove('fullscreen');
+                container.classList.remove('controls-hidden');
                 fullscreenBtn.classList.remove('active');
                 fullscreenBtn.textContent = 'Fullscreen';
                 isFullscreen = false;
+                controlsVisible = true;
                 
                 // Resize renderer
                 const canvasContainer = document.getElementById('canvas-container');
@@ -763,6 +832,26 @@
                 camera.updateProjectionMatrix();
                 renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
             }, 100);
+        }
+    }
+    
+    // Controls visibility toggle
+    function toggleControlsVisibility() {
+        const container = document.querySelector('.container');
+        const hideBtn = document.querySelector('.hide-controls-btn');
+        
+        controlsVisible = !controlsVisible;
+        
+        if (controlsVisible) {
+            container.classList.remove('controls-hidden');
+            hideBtn.classList.remove('active');
+            hideBtn.textContent = '👁';
+            hideBtn.title = 'Hide Controls';
+        } else {
+            container.classList.add('controls-hidden');
+            hideBtn.classList.add('active');
+            hideBtn.textContent = '👁‍🗨';
+            hideBtn.title = 'Show Controls';
         }
     }
     
@@ -1273,6 +1362,7 @@
     }
     
     window.toggleFullscreen = toggleFullscreen;
+    window.toggleControlsVisibility = toggleControlsVisibility;
     
     window.toggleTimePlay = function() {
         timePlaying = !timePlaying;
@@ -1346,6 +1436,12 @@
             if (e.key === 'Escape' && isFullscreen) {
                 toggleFullscreen();
             }
+            // Toggle controls with 'H' key in fullscreen
+            if (e.key === 'h' || e.key === 'H') {
+                if (isFullscreen) {
+                    toggleControlsVisibility();
+                }
+            }
         });
         
         // Window resize
@@ -1374,9 +1470,11 @@
             const fullscreenBtn = document.getElementById('fullscreenBtn');
             
             container.classList.remove('fullscreen');
+            container.classList.remove('controls-hidden');
             fullscreenBtn.classList.remove('active');
             fullscreenBtn.textContent = 'Fullscreen';
             isFullscreen = false;
+            controlsVisible = true;
             
             // Resize renderer
             setTimeout(() => {
