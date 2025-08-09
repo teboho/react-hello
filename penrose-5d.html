@@ -61,6 +61,71 @@
         max-height: 95vh;
         position: relative;
         z-index: 1;
+        transition: all 0.3s ease;
+    }
+    
+    /* Fullscreen styles */
+    .container.fullscreen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        max-width: none;
+        max-height: none;
+        border-radius: 0;
+        padding: 10px;
+        z-index: 1000;
+        background: rgba(10, 14, 39, 0.95);
+    }
+    
+    .container.fullscreen h1,
+    .container.fullscreen .subtitle {
+        position: absolute;
+        top: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1001;
+        margin: 0;
+    }
+    
+    .container.fullscreen .subtitle {
+        top: 45px;
+    }
+    
+    .container.fullscreen .controls,
+    .container.fullscreen .slider-group,
+    .container.fullscreen .info {
+        position: absolute;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 1001;
+        margin: 0;
+        background: rgba(10, 14, 39, 0.8);
+        padding: 10px 20px;
+        border-radius: 15px;
+        border: 1px solid rgba(147, 51, 234, 0.3);
+        backdrop-filter: blur(20px);
+    }
+    
+    .container.fullscreen .slider-group {
+        bottom: 80px;
+    }
+    
+    .container.fullscreen .info {
+        bottom: 140px;
+        max-width: 80%;
+    }
+    
+    .container.fullscreen #canvas-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+        margin: 0;
     }
     
     h1 {
@@ -168,6 +233,21 @@
         50% { box-shadow: 0 4px 30px rgba(240,147,251,0.9); }
     }
     
+    /* Fullscreen button special styling */
+    .fullscreen-btn {
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.8) 0%, rgba(139, 195, 74, 0.8) 100%);
+        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+    }
+    
+    .fullscreen-btn:hover {
+        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.6);
+    }
+    
+    .fullscreen-btn.active {
+        background: linear-gradient(135deg, rgba(255, 152, 0, 0.9) 0%, rgba(255, 193, 7, 0.9) 100%);
+        box-shadow: 0 4px 20px rgba(255, 152, 0, 0.6);
+    }
+    
     .slider-group {
         display: flex;
         align-items: center;
@@ -269,6 +349,7 @@
         border-radius: 5px;
         font-family: monospace;
         border: 1px solid rgba(147, 51, 234, 0.3);
+        z-index: 1002;
     }
     
     .dimension-displays {
@@ -278,6 +359,7 @@
         display: flex;
         flex-direction: column;
         gap: 5px;
+        z-index: 1002;
     }
     
     .dimension-display {
@@ -318,6 +400,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
+        z-index: 1002;
     }
     
     .timeline-track {
@@ -376,10 +459,38 @@
         transform: scale(1.1);
     }
     
+    /* ESC hint for fullscreen */
+    .fullscreen-hint {
+        position: absolute;
+        top: 50%;
+        left: 20px;
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 12px;
+        background: rgba(0, 0, 0, 0.7);
+        padding: 5px 10px;
+        border-radius: 5px;
+        display: none;
+        z-index: 1003;
+        animation: fadeInOut 3s ease-in-out;
+    }
+    
+    .container.fullscreen .fullscreen-hint {
+        display: block;
+    }
+    
+    @keyframes fadeInOut {
+        0%, 100% { opacity: 0; }
+        20%, 80% { opacity: 1; }
+    }
+    
     /* Mobile optimizations */
     @media (max-width: 640px) {
         .container {
             padding: 15px;
+        }
+        
+        .container.fullscreen {
+            padding: 5px;
         }
         
         .controls {
@@ -404,6 +515,21 @@
             font-size: 10px;
             padding: 4px 8px;
             min-width: 60px;
+        }
+        
+        .container.fullscreen .controls,
+        .container.fullscreen .slider-group,
+        .container.fullscreen .info {
+            padding: 5px 10px;
+            font-size: 11px;
+        }
+        
+        .container.fullscreen .slider-group {
+            bottom: 60px;
+        }
+        
+        .container.fullscreen .info {
+            bottom: 100px;
         }
     }
 </style>
@@ -433,6 +559,8 @@
                 <div class="time-button" onclick="resetTime()">↺</div>
             </div>
         </div>
+        
+        <div class="fullscreen-hint">Press ESC to exit fullscreen</div>
     </div>
     
     <div class="controls">
@@ -441,6 +569,7 @@
         <button onclick="toggleAutoRotate()" id="rotateBtn">Rotate</button>
         <button onclick="toggleTimeMode()" id="timeModeBtn" class="active">Time Mode</button>
         <button onclick="toggleTrails()" id="trailsBtn">Time Trails</button>
+        <button onclick="toggleFullscreen()" id="fullscreenBtn" class="fullscreen-btn">Fullscreen</button>
         <button onclick="resetView()">Reset All</button>
     </div>
     
@@ -482,6 +611,7 @@
     let colorScheme = 0;
     let frameCount = 0;
     let lastTime = performance.now();
+    let isFullscreen = false;
     
     const PHI = (1 + Math.sqrt(5)) / 2;
     const MAX_TIME_STATES = 10;
@@ -575,6 +705,65 @@
         const b = (Math.sin(superposition * 4 + 2*Math.PI/3) + 1) / 2;
         
         return new THREE.Color(r, g, b);
+    }
+    
+    // Fullscreen functionality
+    function toggleFullscreen() {
+        const container = document.querySelector('.container');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        
+        if (!isFullscreen) {
+            // Enter fullscreen
+            if (container.requestFullscreen) {
+                container.requestFullscreen();
+            } else if (container.webkitRequestFullscreen) {
+                container.webkitRequestFullscreen();
+            } else if (container.msRequestFullscreen) {
+                container.msRequestFullscreen();
+            } else if (container.mozRequestFullScreen) {
+                container.mozRequestFullScreen();
+            }
+            
+            // Fallback for browsers that don't support fullscreen API
+            setTimeout(() => {
+                container.classList.add('fullscreen');
+                fullscreenBtn.classList.add('active');
+                fullscreenBtn.textContent = 'Exit Fullscreen';
+                isFullscreen = true;
+                
+                // Resize renderer
+                const containerRect = container.getBoundingClientRect();
+                camera.aspect = containerRect.width / containerRect.height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(containerRect.width, containerRect.height);
+            }, 100);
+            
+        } else {
+            // Exit fullscreen
+            if (document.exitFullscreen) {
+                document.exitFullscreen();
+            } else if (document.webkitExitFullscreen) {
+                document.webkitExitFullscreen();
+            } else if (document.msExitFullscreen) {
+                document.msExitFullscreen();
+            } else if (document.mozCancelFullScreen) {
+                document.mozCancelFullScreen();
+            }
+            
+            // Fallback
+            setTimeout(() => {
+                container.classList.remove('fullscreen');
+                fullscreenBtn.classList.remove('active');
+                fullscreenBtn.textContent = 'Fullscreen';
+                isFullscreen = false;
+                
+                // Resize renderer
+                const canvasContainer = document.getElementById('canvas-container');
+                camera.aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+            }, 100);
+        }
     }
     
     // Initialize Three.js
@@ -1083,6 +1272,8 @@
         document.getElementById('tValue').textContent = timeValue.toFixed(2);
     }
     
+    window.toggleFullscreen = toggleFullscreen;
+    
     window.toggleTimePlay = function() {
         timePlaying = !timePlaying;
         const playBtn = document.querySelector('.time-button');
@@ -1144,13 +1335,57 @@
             entropy = parseFloat(e.target.value);
         });
         
+        // Fullscreen change events
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+        document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+        document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+        
+        // ESC key to exit fullscreen
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && isFullscreen) {
+                toggleFullscreen();
+            }
+        });
+        
         // Window resize
         window.addEventListener('resize', () => {
             const container = document.getElementById('canvas-container');
-            camera.aspect = container.clientWidth / container.clientHeight;
+            if (isFullscreen) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            } else {
+                camera.aspect = container.clientWidth / container.clientHeight;
+                renderer.setSize(container.clientWidth, container.clientHeight);
+            }
             camera.updateProjectionMatrix();
-            renderer.setSize(container.clientWidth, container.clientHeight);
         });
+    }
+    
+    function handleFullscreenChange() {
+        const isCurrentlyFullscreen = !!(document.fullscreenElement || 
+                                        document.webkitFullscreenElement || 
+                                        document.mozFullScreenElement || 
+                                        document.msFullscreenElement);
+        
+        if (!isCurrentlyFullscreen && isFullscreen) {
+            // User pressed ESC or exited fullscreen
+            const container = document.querySelector('.container');
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            
+            container.classList.remove('fullscreen');
+            fullscreenBtn.classList.remove('active');
+            fullscreenBtn.textContent = 'Fullscreen';
+            isFullscreen = false;
+            
+            // Resize renderer
+            setTimeout(() => {
+                const canvasContainer = document.getElementById('canvas-container');
+                camera.aspect = canvasContainer.clientWidth / canvasContainer.clientHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(canvasContainer.clientWidth, canvasContainer.clientHeight);
+            }, 100);
+        }
     }
     
     function animate() {
