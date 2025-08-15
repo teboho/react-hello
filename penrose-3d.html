@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>3D Penrose Tiling</title>
+    <title>Quantum 3D Penrose Tiling</title>
     <style>
         * {
             box-sizing: border-box;
@@ -13,334 +13,741 @@
         }
 
 ```
-    body {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        min-height: 100vh;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-        padding: 10px;
-    }
-    
+body {
+    background: radial-gradient(ellipse at center, #1a1a2e 0%, #16213e 30%, #0f3460 60%, #0a0a1a 100%);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+    padding: 10px;
+    overflow: hidden;
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 20px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.4), 0 0 40px rgba(102, 126, 234, 0.1);
+    padding: 20px;
+    width: 100%;
+    max-width: 1400px;
+    display: flex;
+    flex-direction: column;
+    max-height: 95vh;
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+h1 {
+    text-align: center;
+    color: #333;
+    margin-bottom: 5px;
+    font-size: clamp(20px, 4vw, 32px);
+    background: linear-gradient(45deg, #667eea, #764ba2, #00d4ff, #5b86e5);
+    background-size: 300% 300%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradientShift 3s ease-in-out infinite;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+@keyframes gradientShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+.subtitle {
+    text-align: center;
+    color: #666;
+    margin-bottom: 15px;
+    font-size: clamp(12px, 2vw, 14px);
+    font-style: italic;
+}
+
+#canvas-container {
+    position: relative;
+    width: 100%;
+    flex: 1;
+    min-height: 350px;
+    border-radius: 15px;
+    overflow: hidden;
+    background: radial-gradient(ellipse at center, #0a0a1e 0%, #000015 50%, #000008 100%);
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.8);
+}
+
+canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+}
+
+canvas:active {
+    cursor: grabbing;
+}
+
+.controls {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+
+button {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 8px 14px;
+    border-radius: 25px;
+    cursor: pointer;
+    font-size: clamp(11px, 2vw, 13px);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    white-space: nowrap;
+    flex: 0 1 auto;
+    position: relative;
+    overflow: hidden;
+}
+
+button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+button:hover::before {
+    left: 100%;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0,0,0,0.3);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+button.active {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    box-shadow: 0 0 20px rgba(240, 147, 251, 0.4);
+}
+
+button.quantum {
+    background: linear-gradient(135deg, #00d4ff 0%, #5b86e5 100%);
+    box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+}
+
+button.quantum.active {
+    background: linear-gradient(135deg, #ff006e 0%, #8338ec 100%);
+    box-shadow: 0 0 20px rgba(255, 0, 110, 0.4);
+}
+
+button.render {
+    background: linear-gradient(135deg, #ff9500 0%, #ff5722 100%);
+    box-shadow: 0 0 15px rgba(255, 149, 0, 0.3);
+}
+
+button.render.active {
+    background: linear-gradient(135deg, #4caf50 0%, #2e7d32 100%);
+    box-shadow: 0 0 20px rgba(76, 175, 80, 0.4);
+}
+
+.slider-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.slider-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+}
+
+label {
+    color: #666;
+    font-size: 11px;
+    min-width: 55px;
+    font-weight: 500;
+}
+
+input[type="range"] {
+    width: 100px;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to right, #667eea, #764ba2);
+    outline: none;
+    -webkit-appearance: none;
+    position: relative;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fff, #f0f0f0);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+}
+
+input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #fff, #f0f0f0);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.color-info {
+    text-align: center;
+    color: #666;
+    font-size: 13px;
+    margin-top: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.quantum-info {
+    text-align: center;
+    color: #0099ff;
+    font-size: 12px;
+    margin-top: 5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(0, 153, 255, 0.3);
+}
+
+.render-info {
+    text-align: center;
+    color: #ff9500;
+    font-size: 12px;
+    margin-top: 5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(255, 149, 0, 0.3);
+}
+
+.info {
+    text-align: center;
+    color: #666;
+    font-size: clamp(11px, 2vw, 12px);
+    margin-top: 10px;
+    padding: 0 10px;
+}
+
+.stats {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: #00ffff;
+    font-size: 11px;
+    background: rgba(0,0,0,0.8);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    border: 1px solid rgba(0,255,255,0.3);
+    box-shadow: 0 0 15px rgba(0,255,255,0.2);
+    backdrop-filter: blur(10px);
+}
+
+.quantum-panel {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #ff00ff;
+    font-size: 10px;
+    background: rgba(0,0,0,0.8);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    border: 1px solid rgba(255,0,255,0.3);
+    max-width: 220px;
+    box-shadow: 0 0 15px rgba(255,0,255,0.2);
+    backdrop-filter: blur(10px);
+}
+
+.render-panel {
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    color: #ffaa00;
+    font-size: 10px;
+    background: rgba(0,0,0,0.8);
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    border: 1px solid rgba(255,170,0,0.3);
+    max-width: 200px;
+    box-shadow: 0 0 15px rgba(255,170,0,0.2);
+    backdrop-filter: blur(10px);
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
     .container {
-        background: rgba(255, 255, 255, 0.95);
-        border-radius: 20px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        padding: 20px;
-        width: 100%;
-        max-width: 1200px;
-        display: flex;
-        flex-direction: column;
-        max-height: 95vh;
-        backdrop-filter: blur(10px);
-    }
-    
-    h1 {
-        text-align: center;
-        color: #333;
-        margin-bottom: 5px;
-        font-size: clamp(20px, 4vw, 28px);
-    }
-    
-    .subtitle {
-        text-align: center;
-        color: #666;
-        margin-bottom: 15px;
-        font-size: clamp(12px, 2vw, 14px);
-    }
-    
-    #canvas-container {
-        position: relative;
-        width: 100%;
-        flex: 1;
-        min-height: 300px;
-        border-radius: 10px;
-        overflow: hidden;
-        background: radial-gradient(ellipse at center, #1a1a2e 0%, #0f0f1e 100%);
-    }
-    
-    canvas {
-        display: block;
-        width: 100%;
-        height: 100%;
-        cursor: grab;
-    }
-    
-    canvas:active {
-        cursor: grabbing;
+        padding: 15px;
+        max-width: 100%;
     }
     
     .controls {
-        display: flex;
-        gap: 10px;
-        justify-content: center;
-        margin-top: 15px;
-        flex-wrap: wrap;
+        gap: 6px;
     }
     
     button {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        border-radius: 25px;
-        cursor: pointer;
-        font-size: clamp(12px, 2vw, 14px);
-        transition: all 0.3s ease;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        white-space: nowrap;
-        flex: 0 1 auto;
+        padding: 8px 12px;
+        font-size: 11px;
     }
     
-    button:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.3);
-    }
-    
-    button:active {
-        transform: translateY(0);
-    }
-    
-    button.active {
-        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    }
-    
-    .slider-group {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        justify-content: center;
-        margin-top: 10px;
-        flex-wrap: wrap;
-    }
-    
-    .slider-container {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-    
-    label {
-        color: #666;
-        font-size: 12px;
-        min-width: 60px;
+    #canvas-container {
+        min-height: 280px;
     }
     
     input[type="range"] {
-        width: 120px;
-        height: 4px;
-        border-radius: 2px;
-        background: linear-gradient(to right, #667eea, #764ba2);
-        outline: none;
-        -webkit-appearance: none;
+        width: 80px;
     }
     
-    input[type="range"]::-webkit-slider-thumb {
-        -webkit-appearance: none;
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        cursor: pointer;
+    .quantum-panel, .render-panel {
+        font-size: 9px;
+        max-width: 160px;
+    }
+}
+
+/* Landscape mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .container {
+        padding: 10px;
+        max-height: 100vh;
     }
     
-    input[type="range"]::-moz-range-thumb {
-        width: 16px;
-        height: 16px;
-        border-radius: 50%;
-        background: white;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        cursor: pointer;
-        border: none;
+    h1 {
+        margin-bottom: 2px;
+        font-size: 18px;
     }
     
-    .color-info {
-        text-align: center;
-        color: #666;
-        font-size: 13px;
+    .subtitle {
+        margin-bottom: 5px;
+    }
+    
+    .controls {
         margin-top: 8px;
-        font-weight: 500;
-        text-transform: uppercase;
-        letter-spacing: 1px;
+        gap: 4px;
     }
     
-    .info {
-        text-align: center;
-        color: #666;
-        font-size: clamp(11px, 2vw, 12px);
-        margin-top: 10px;
-        padding: 0 10px;
+    #canvas-container {
+        min-height: 200px;
     }
     
-    .stats {
-        position: absolute;
-        top: 10px;
-        left: 10px;
-        color: white;
-        font-size: 11px;
-        background: rgba(0,0,0,0.5);
-        padding: 5px 10px;
-        border-radius: 5px;
-        font-family: monospace;
+    .slider-group {
+        margin-top: 5px;
     }
-    
-    /* Mobile optimizations */
-    @media (max-width: 640px) {
-        .container {
-            padding: 15px;
-        }
-        
-        .controls {
-            gap: 8px;
-        }
-        
-        button {
-            padding: 10px 14px;
-            font-size: 12px;
-        }
-        
-        #canvas-container {
-            min-height: 250px;
-        }
-        
-        input[type="range"] {
-            width: 100px;
-        }
-    }
-    
-    /* Landscape mobile */
-    @media (max-height: 500px) {
-        .container {
-            padding: 10px;
-        }
-        
-        h1 {
-            margin-bottom: 2px;
-        }
-        
-        .subtitle {
-            margin-bottom: 5px;
-        }
-        
-        .controls {
-            margin-top: 8px;
-            gap: 5px;
-        }
-        
-        #canvas-container {
-            min-height: 200px;
-        }
-    }
-</style>
+}
+
+/* Quantum visual effects */
+@keyframes quantumPulse {
+    0%, 100% { opacity: 0.8; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.05); }
+}
+
+@keyframes waveRipple {
+    0% { transform: scale(0); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+.quantum-active {
+    animation: quantumPulse 2s ease-in-out infinite;
+}
+
+.wave-effect::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    border: 2px solid rgba(0, 255, 255, 0.6);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    animation: waveRipple 1s ease-out infinite;
+}
 ```
+
+</style>
 
 </head>
 <body>
     <div class="container">
-        <h1>3D Penrose Tiling</h1>
-        <div class="subtitle">Interactive Three-Dimensional P2 Rhombus Tiling</div>
+        <h1>Quantum 3D Penrose Tiling</h1>
+        <div class="subtitle">Interactive Quantum-Mechanical Three-Dimensional P2 Rhombus Tiling with Advanced Rendering</div>
 
 ```
-    <div id="canvas-container">
-        <div class="stats" id="stats">FPS: 60 | Tiles: 0</div>
+<div id="canvas-container">
+    <div class="stats" id="stats">FPS: 60 | Tiles: 0 | Ψ: STABLE</div>
+    <div class="quantum-panel" id="quantumPanel">
+        QUANTUM STATE: COHERENT<br>
+        WAVE AMPLITUDE: 1.0<br>
+        ENTANGLEMENT: 0%<br>
+        ENERGY: 0 GeV<br>
+        UNCERTAINTY: ΔxΔp ≥ ℏ/2
     </div>
-    
-    <div class="controls">
-        <button onclick="generateTiling()">Regenerate</button>
-        <button onclick="toggleColors()">Next Color</button>
-        <button onclick="toggleColorMode()" id="colorModeBtn">Color Mode</button>
-        <button onclick="toggleAutoRotate()" id="rotateBtn">Auto Rotate</button>
-        <button onclick="toggleWireframe()" id="wireframeBtn">Wireframe</button>
-        <button onclick="resetCamera()">Reset View</button>
-        <button onclick="saveImage()">Save Image</button>
-    </div>
-    
-    <div class="color-info" id="colorInfo">Color: Coral Reef</div>
-    
-    <div class="slider-group">
-        <div class="slider-container">
-            <label>Height:</label>
-            <input type="range" id="heightSlider" min="0" max="50" value="10" step="1">
-        </div>
-        <div class="slider-container">
-            <label>Spacing:</label>
-            <input type="range" id="spacingSlider" min="0" max="20" value="0" step="1">
-        </div>
-    </div>
-    
-    <div class="info">
-        Drag to rotate • Scroll to zoom • Right-click to pan • Adjust sliders for 3D effects
+    <div class="render-panel" id="renderPanel">
+        RENDER MODE: STANDARD<br>
+        BLOOM: OFF<br>
+        SUBSURFACE: OFF<br>
+        RAYTRACING: OFF
     </div>
 </div>
 
+<div class="controls">
+    <button onclick="generateTiling()">Regenerate</button>
+    <button onclick="toggleColors()">Next Color</button>
+    <button onclick="toggleColorMode()" id="colorModeBtn">Color Mode</button>
+    <button onclick="toggleAutoRotate()" id="rotateBtn">Auto Rotate</button>
+    <button onclick="toggleWireframe()" id="wireframeBtn">Wireframe</button>
+    <button onclick="resetCamera()">Reset View</button>
+    <button onclick="saveImage()">Save Image</button>
+</div>
+
+<div class="controls">
+    <button class="quantum" onclick="toggleQuantumField()" id="quantumBtn">Quantum Field</button>
+    <button class="quantum" onclick="toggleWaveFunction()" id="waveBtn">Wave Function</button>
+    <button class="quantum" onclick="toggleQuantumTunneling()" id="tunnelBtn">Tunneling</button>
+    <button class="quantum" onclick="toggleEntanglement()" id="entangleBtn">Entanglement</button>
+    <button class="quantum" onclick="toggleUncertainty()" id="uncertaintyBtn">Uncertainty</button>
+    <button class="quantum" onclick="collapseWaveFunction()">Collapse Ψ</button>
+</div>
+
+<div class="controls">
+    <button class="render" onclick="toggleBloom()" id="bloomBtn">Bloom</button>
+    <button class="render" onclick="toggleSSAO()" id="ssaoBtn">SSAO</button>
+    <button class="render" onclick="toggleSubsurface()" id="subsurfaceBtn">Subsurface</button>
+    <button class="render" onclick="toggleRaytracing()" id="raytracingBtn">Raytracing</button>
+    <button class="render" onclick="togglePostProcessing()" id="postBtn">Post-FX</button>
+    <button class="render" onclick="toggleVolumetric()" id="volumetricBtn">Volumetric</button>
+</div>
+
+<div class="color-info" id="colorInfo">Color: Quantum State</div>
+<div class="quantum-info" id="quantumInfo">QUANTUM EFFECTS: DISABLED</div>
+<div class="render-info" id="renderInfo">ENHANCED RENDERING: DISABLED</div>
+
+<div class="slider-group">
+    <div class="slider-container">
+        <label>Height:</label>
+        <input type="range" id="heightSlider" min="0" max="50" value="15" step="1">
+    </div>
+    <div class="slider-container">
+        <label>Spacing:</label>
+        <input type="range" id="spacingSlider" min="0" max="20" value="2" step="1">
+    </div>
+    <div class="slider-container">
+        <label>Quantum:</label>
+        <input type="range" id="quantumSlider" min="0" max="100" value="75" step="1">
+    </div>
+    <div class="slider-container">
+        <label>Energy:</label>
+        <input type="range" id="energySlider" min="0" max="100" value="50" step="1">
+    </div>
+    <div class="slider-container">
+        <label>Bloom:</label>
+        <input type="range" id="bloomSlider" min="0" max="100" value="30" step="1">
+    </div>
+    <div class="slider-container">
+        <label>Quality:</label>
+        <input type="range" id="qualitySlider" min="1" max="4" value="2" step="1">
+    </div>
+</div>
+
+<div class="info">
+    Drag to rotate • Scroll to zoom • Right-click to pan • Quantum effects simulate wave-particle duality • Enhanced rendering for photorealistic visualization
+</div>
+```
+
+</div>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
 <script>
     // Global variables
     let scene, camera, renderer, controls;
     let rhombiMeshes = [];
     let autoRotate = false;
     let wireframe = false;
-    let tileHeight = 10;
-    let tileSpacing = 0;
+    let tileHeight = 15;
+    let tileSpacing = 2;
     let colorScheme = 0;
     let frameCount = 0;
     let lastTime = performance.now();
     
+    // Quantum variables
+    let quantumField = false;
+    let waveFunction = false;
+    let quantumTunneling = false;
+    let entanglement = false;
+    let uncertainty = false;
+    let quantumIntensity = 75;
+    let energyLevel = 50;
+    let quantumParticles = [];
+    let waveFunctionMesh = null;
+    let entangledPairs = [];
+    let quantumTime = 0;
+    
+    // Rendering variables
+    let bloom = false;
+    let ssao = false;
+    let subsurface = false;
+    let raytracing = false;
+    let postProcessing = false;
+    let volumetric = false;
+    let bloomIntensity = 30;
+    let renderQuality = 2;
+    
+    // Post-processing effects
+    let composer = null;
+    let bloomPass = null;
+    let renderPass = null;
+    
     const PHI = (1 + Math.sqrt(5)) / 2;
+    const PLANCK_CONSTANT = 6.626e-34; // Scaled for visualization
     
     const colorSchemes = [
-        // Original schemes
+        // Quantum-inspired color schemes
+        { thick: 0x00ffff, thin: 0xff00ff, emissive: 0x001133, name: "Quantum State" },
+        { thick: 0x0099ff, thin: 0xff9900, emissive: 0x000033, name: "Wave-Particle" },
+        { thick: 0xff0080, thin: 0x80ff00, emissive: 0x330011, name: "Superposition" },
+        { thick: 0x8000ff, thin: 0xff8000, emissive: 0x110033, name: "Entangled" },
+        { thick: 0x00ff80, thin: 0xff0040, emissive: 0x001122, name: "Photon" },
+        { thick: 0x4080ff, thin: 0xff4080, emissive: 0x001133, name: "Electron" },
+        { thick: 0xff8040, thin: 0x4040ff, emissive: 0x221100, name: "Neutrino" },
+        { thick: 0x80ff40, thin: 0xff4040, emissive: 0x112200, name: "Quark" },
+        // Original enhanced schemes
         { thick: 0xff6b6b, thin: 0x4ecdc4, emissive: 0x330000, name: "Coral Reef" },
         { thick: 0xf9ca24, thin: 0x6c5ce7, emissive: 0x332200, name: "Sunset" },
         { thick: 0x30336b, thin: 0x95afc0, emissive: 0x000033, name: "Ocean" },
         { thick: 0xeb4d4b, thin: 0x22a6b3, emissive: 0x330011, name: "Fire & Ice" },
-        // New vibrant schemes
-        { thick: 0xff00ff, thin: 0x00ffff, emissive: 0x330033, name: "Neon" },
-        { thick: 0x00ff00, thin: 0xff00ff, emissive: 0x003300, name: "Cyber" },
-        { thick: 0xffa500, thin: 0x800080, emissive: 0x331100, name: "Tropical" },
-        { thick: 0xff1493, thin: 0x00bfff, emissive: 0x330022, name: "Miami" },
-        { thick: 0x7fff00, thin: 0xff69b4, emissive: 0x113300, name: "Spring" },
-        { thick: 0xffd700, thin: 0x4169e1, emissive: 0x332200, name: "Royal" },
-        // Monochrome schemes
-        { thick: 0xffffff, thin: 0x888888, emissive: 0x111111, name: "Monochrome" },
-        { thick: 0x333333, thin: 0xcccccc, emissive: 0x000000, name: "Grayscale" },
-        // Nature-inspired
-        { thick: 0x228b22, thin: 0x90ee90, emissive: 0x001100, name: "Forest" },
-        { thick: 0x8b4513, thin: 0xf4a460, emissive: 0x110500, name: "Desert" },
-        { thick: 0x483d8b, thin: 0xda70d6, emissive: 0x000033, name: "Twilight" },
-        // Metallic schemes
-        { thick: 0xffd700, thin: 0xc0c0c0, emissive: 0x332200, name: "Gold & Silver" },
-        { thick: 0xb87333, thin: 0x4682b4, emissive: 0x221100, name: "Copper & Steel" },
-        { thick: 0xe5e4e2, thin: 0x967969, emissive: 0x222222, name: "Platinum" }
+        // Metallic quantum schemes
+        { thick: 0xffd700, thin: 0xc0c0c0, emissive: 0x332200, name: "Gold Quantum" },
+        { thick: 0xb87333, thin: 0x4682b4, emissive: 0x221100, name: "Copper Field" },
+        { thick: 0xe5e4e2, thin: 0x967969, emissive: 0x222222, name: "Platinum Matrix" },
+        // Neon schemes
+        { thick: 0xff00ff, thin: 0x00ffff, emissive: 0x330033, name: "Neon Dreams" },
+        { thick: 0x00ff00, thin: 0xff00ff, emissive: 0x003300, name: "Cyber Matrix" },
+        { thick: 0xffa500, thin: 0x800080, emissive: 0x331100, name: "Digital Sunset" }
     ];
     
     let currentSchemeIndex = 0;
-    let colorMode = 'scheme'; // 'scheme', 'gradient', 'random', 'rainbow'
+    let colorMode = 'scheme';
+    
+    // Quantum particle class
+    class QuantumParticle {
+        constructor(x, y, z) {
+            this.position = new THREE.Vector3(x, y, z);
+            this.velocity = new THREE.Vector3(
+                (Math.random() - 0.5) * 4,
+                (Math.random() - 0.5) * 4,
+                (Math.random() - 0.5) * 4
+            );
+            this.wavePhase = Math.random() * Math.PI * 2;
+            this.energy = Math.random() * energyLevel + 10;
+            this.spin = Math.random() > 0.5 ? 0.5 : -0.5;
+            this.entangled = null;
+            this.probability = 1.0;
+            this.lifetime = Math.random() * 1000 + 500;
+            this.age = 0;
+            
+            // Create visual representation
+            const geometry = new THREE.SphereGeometry(0.8, 12, 12);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0x00ffff,
+                transparent: true,
+                opacity: 0.9
+            });
+            this.mesh = new THREE.Mesh(geometry, material);
+            this.mesh.position.copy(this.position);
+            
+            // Add glow effect
+            const glowGeometry = new THREE.SphereGeometry(1.5, 8, 8);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0x00ffff,
+                transparent: true,
+                opacity: 0.2
+            });
+            this.glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            this.glow.position.copy(this.position);
+            
+            scene.add(this.mesh);
+            scene.add(this.glow);
+        }
+        
+        update(time) {
+            this.age += 1;
+            
+            // Wave function behavior
+            if (waveFunction) {
+                this.wavePhase += 0.15;
+                const amplitude = Math.sin(this.wavePhase) * quantumIntensity * 0.15;
+                this.mesh.position.y = this.position.y + amplitude;
+                this.glow.position.y = this.position.y + amplitude;
+                this.mesh.material.opacity = 0.7 + Math.abs(amplitude) * 0.02;
+                this.glow.material.opacity = 0.1 + Math.abs(amplitude) * 0.01;
+            }
+            
+            // Quantum tunneling
+            if (quantumTunneling && Math.random() < 0.02) {
+                this.position.x += (Math.random() - 0.5) * 30;
+                this.position.z += (Math.random() - 0.5) * 30;
+                this.mesh.position.copy(this.position);
+                this.glow.position.copy(this.position);
+                
+                // Flash effect
+                this.mesh.material.opacity = 0.1;
+                this.glow.material.opacity = 0.5;
+                setTimeout(() => {
+                    this.mesh.material.opacity = 0.9;
+                    this.glow.material.opacity = 0.2;
+                }, 150);
+            }
+            
+            // Uncertainty principle
+            if (uncertainty) {
+                const uncertaintyFactor = quantumIntensity * 0.002;
+                this.velocity.x += (Math.random() - 0.5) * uncertaintyFactor;
+                this.velocity.z += (Math.random() - 0.5) * uncertaintyFactor;
+                this.position.add(this.velocity);
+                this.mesh.position.copy(this.position);
+                this.glow.position.copy(this.position);
+                
+                // Velocity decay
+                this.velocity.multiplyScalar(0.98);
+            }
+            
+            // Entanglement
+            if (this.entangled) {
+                const distance = this.position.distanceTo(this.entangled.position);
+                if (distance > 80) {
+                    // Spooky action at a distance
+                    this.spin = -this.entangled.spin;
+                    this.mesh.material.color.setHex(this.spin > 0 ? 0xff4444 : 0x4444ff);
+                    this.glow.material.color.setHex(this.spin > 0 ? 0xff4444 : 0x4444ff);
+                    
+                    // Create entanglement line
+                    if (Math.random() < 0.1) {
+                        this.createEntanglementLine();
+                    }
+                }
+            }
+            
+            // Energy visualization
+            const energyHue = (this.energy / 100) * 0.8;
+            const energyColor = new THREE.Color().setHSL(energyHue, 1, 0.5);
+            if (!this.entangled || Math.random() < 0.5) {
+                this.mesh.material.color = energyColor;
+                this.glow.material.color = energyColor;
+            }
+            
+            // Quantum field interaction
+            if (quantumField && waveFunctionMesh) {
+                const fieldY = this.getFieldHeight(this.position.x, this.position.z);
+                this.position.y = fieldY + 5;
+                this.mesh.position.copy(this.position);
+                this.glow.position.copy(this.position);
+            }
+            
+            // Lifetime management
+            if (this.age > this.lifetime) {
+                this.destroy();
+                return false;
+            }
+            
+            return true;
+        }
+        
+        createEntanglementLine() {
+            if (!this.entangled) return;
+            
+            const points = [this.position, this.entangled.position];
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const material = new THREE.LineBasicMaterial({
+                color: 0xff00ff,
+                transparent: true,
+                opacity: 0.8
+            });
+            const line = new THREE.Line(geometry, material);
+            scene.add(line);
+            
+            // Remove line after brief display
+            setTimeout(() => {
+                scene.remove(line);
+                geometry.dispose();
+                material.dispose();
+            }, 200);
+        }
+        
+        getFieldHeight(x, z) {
+            if (!waveFunctionMesh) return 0;
+            const distance = Math.sqrt(x * x + z * z);
+            return Math.sin(distance * 0.02 + quantumTime * 0.005) * quantumIntensity * 0.1;
+        }
+        
+        destroy() {
+            scene.remove(this.mesh);
+            scene.remove(this.glow);
+            this.mesh.geometry.dispose();
+            this.mesh.material.dispose();
+            this.glow.geometry.dispose();
+            this.glow.material.dispose();
+        }
+    }
     
     // Initialize Three.js
     function init() {
         // Scene
         scene = new THREE.Scene();
-        scene.fog = new THREE.Fog(0x0f0f1e, 100, 1000);
+        scene.fog = new THREE.Fog(0x0a0a1a, 150, 1200);
         
         // Camera
         const container = document.getElementById('canvas-container');
         const aspect = container.clientWidth / container.clientHeight;
-        camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 1000);
-        camera.position.set(0, 200, 300);
+        camera = new THREE.PerspectiveCamera(75, aspect, 0.1, 2000);
+        camera.position.set(0, 250, 400);
         
         // Renderer
         renderer = new THREE.WebGLRenderer({ 
             antialias: true, 
             alpha: true,
-            preserveDrawingBuffer: true 
+            preserveDrawingBuffer: true,
+            powerPreference: "high-performance"
         });
         renderer.setSize(container.clientWidth, container.clientHeight);
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, renderQuality));
         renderer.shadowMap.enabled = true;
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
         container.appendChild(renderer.domElement);
         
         // Controls
@@ -360,17 +767,19 @@
     }
     
     function setupControls() {
-        // Custom orbit controls implementation
+        // Custom orbit controls implementation with enhanced features
         const canvas = renderer.domElement;
         let isDragging = false;
         let previousMousePosition = { x: 0, y: 0 };
-        let rotation = { x: -0.5, y: 0 };
-        let distance = 400;
+        let rotation = { x: -0.4, y: 0 };
+        let distance = 500;
         let panOffset = { x: 0, y: 0 };
+        let momentum = { x: 0, y: 0 };
         
         canvas.addEventListener('mousedown', (e) => {
             isDragging = true;
             previousMousePosition = { x: e.clientX, y: e.clientY };
+            momentum = { x: 0, y: 0 };
         });
         
         canvas.addEventListener('mousemove', (e) => {
@@ -382,11 +791,13 @@
             };
             
             if (e.buttons === 1) { // Left click - rotate
-                rotation.y += deltaMove.x * 0.01;
-                rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotation.x - deltaMove.y * 0.01));
+                momentum.x = deltaMove.x * 0.01;
+                momentum.y = deltaMove.y * 0.01;
+                rotation.y += momentum.x;
+                rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotation.x - momentum.y));
             } else if (e.buttons === 2) { // Right click - pan
-                panOffset.x -= deltaMove.x * 0.5;
-                panOffset.y += deltaMove.y * 0.5;
+                panOffset.x -= deltaMove.x * 0.8;
+                panOffset.y += deltaMove.y * 0.8;
             }
             
             previousMousePosition = { x: e.clientX, y: e.clientY };
@@ -395,19 +806,25 @@
         
         canvas.addEventListener('mouseup', () => {
             isDragging = false;
+            // Apply momentum
+            if (autoRotate) {
+                scene.userData.momentumY = momentum.x * 0.1;
+            }
         });
         
         canvas.addEventListener('wheel', (e) => {
             e.preventDefault();
-            distance = Math.max(50, Math.min(800, distance + e.deltaY * 0.5));
+            const zoomSpeed = e.deltaY * 0.8;
+            distance = Math.max(100, Math.min(1000, distance + zoomSpeed));
             updateCamera();
         });
         
         canvas.addEventListener('contextmenu', (e) => e.preventDefault());
         
-        // Touch controls
+        // Enhanced touch controls
         let touches = [];
         let lastTouchDistance = 0;
+        let lastTouchCenter = { x: 0, y: 0 };
         
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
@@ -419,6 +836,10 @@
                 const dx = touches[0].clientX - touches[1].clientX;
                 const dy = touches[0].clientY - touches[1].clientY;
                 lastTouchDistance = Math.sqrt(dx * dx + dy * dy);
+                lastTouchCenter = {
+                    x: (touches[0].clientX + touches[1].clientX) / 2,
+                    y: (touches[0].clientY + touches[1].clientY) / 2
+                };
             }
         });
         
@@ -432,8 +853,8 @@
                     y: touches[0].clientY - previousMousePosition.y
                 };
                 
-                rotation.y += deltaMove.x * 0.01;
-                rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotation.x - deltaMove.y * 0.01));
+                rotation.y += deltaMove.x * 0.015;
+                rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, rotation.x - deltaMove.y * 0.015));
                 
                 previousMousePosition = { x: touches[0].clientX, y: touches[0].clientY };
                 updateCamera();
@@ -444,7 +865,7 @@
                 
                 if (lastTouchDistance > 0) {
                     const scale = touchDistance / lastTouchDistance;
-                    distance = Math.max(50, Math.min(800, distance / scale));
+                    distance = Math.max(100, Math.min(1000, distance / scale));
                     updateCamera();
                 }
                 
@@ -458,14 +879,14 @@
         
         window.updateCamera = function() {
             camera.position.x = distance * Math.sin(rotation.y) * Math.cos(rotation.x) + panOffset.x;
-            camera.position.y = distance * Math.sin(rotation.x) + panOffset.y;
+            camera.position.y = distance * Math.sin(rotation.x) + panOffset.y + 50;
             camera.position.z = distance * Math.cos(rotation.y) * Math.cos(rotation.x);
             camera.lookAt(panOffset.x, panOffset.y, 0);
         };
         
         window.resetCamera = function() {
-            rotation = { x: -0.5, y: 0 };
-            distance = 400;
+            rotation = { x: -0.4, y: 0 };
+            distance = 500;
             panOffset = { x: 0, y: 0 };
             updateCamera();
         };
@@ -474,30 +895,48 @@
     }
     
     function setupLights() {
-        // Ambient light
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+        // Enhanced lighting system
+        
+        // Ambient light with quantum tint
+        const ambientLight = new THREE.AmbientLight(0x404080, 0.3);
         scene.add(ambientLight);
         
-        // Directional light
-        const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        dirLight.position.set(50, 100, 50);
+        // Primary directional light
+        const dirLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        dirLight.position.set(100, 200, 100);
         dirLight.castShadow = true;
-        dirLight.shadow.camera.left = -200;
-        dirLight.shadow.camera.right = 200;
-        dirLight.shadow.camera.top = 200;
-        dirLight.shadow.camera.bottom = -200;
-        dirLight.shadow.mapSize.width = 2048;
-        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.left = -300;
+        dirLight.shadow.camera.right = 300;
+        dirLight.shadow.camera.top = 300;
+        dirLight.shadow.camera.bottom = -300;
+        dirLight.shadow.camera.near = 0.1;
+        dirLight.shadow.camera.far = 1000;
+        dirLight.shadow.mapSize.width = 4096;
+        dirLight.shadow.mapSize.height = 4096;
+        dirLight.shadow.bias = -0.0001;
         scene.add(dirLight);
         
-        // Point lights for color
-        const pointLight1 = new THREE.PointLight(0x667eea, 0.5, 500);
-        pointLight1.position.set(-100, 50, 100);
-        scene.add(pointLight1);
+        // Quantum point lights
+        const quantumLight1 = new THREE.PointLight(0x00ffff, 0.8, 800);
+        quantumLight1.position.set(-150, 100, 150);
+        scene.add(quantumLight1);
         
-        const pointLight2 = new THREE.PointLight(0x764ba2, 0.5, 500);
-        pointLight2.position.set(100, 50, -100);
-        scene.add(pointLight2);
+        const quantumLight2 = new THREE.PointLight(0xff00ff, 0.8, 800);
+        quantumLight2.position.set(150, 100, -150);
+        scene.add(quantumLight2);
+        
+        // Rim lighting
+        const rimLight1 = new THREE.DirectionalLight(0x4080ff, 0.5);
+        rimLight1.position.set(-100, 50, -100);
+        scene.add(rimLight1);
+        
+        const rimLight2 = new THREE.DirectionalLight(0xff8040, 0.5);
+        rimLight2.position.set(100, 50, 100);
+        scene.add(rimLight2);
+        
+        // Store lights for animation
+        window.quantumLights = [quantumLight1, quantumLight2];
+        window.rimLights = [rimLight1, rimLight2];
     }
     
     class Rhombus3D {
@@ -507,6 +946,9 @@
             this.y = y;
             this.angle = angle;
             this.size = size;
+            this.quantumState = Math.random();
+            this.wavePhase = Math.random() * Math.PI * 2;
+            this.energy = Math.random() * 100;
         }
         
         getPoints() {
@@ -570,9 +1012,9 @@
             const extrudeSettings = {
                 depth: tileHeight,
                 bevelEnabled: true,
-                bevelThickness: 1,
-                bevelSize: 0.5,
-                bevelSegments: 2
+                bevelThickness: 2,
+                bevelSize: 1,
+                bevelSegments: 3
             };
             
             const geometry = new THREE.ExtrudeGeometry(shape, extrudeSettings);
@@ -585,42 +1027,59 @@
                 color = this.type === 'thick' ? scheme.thick : scheme.thin;
                 emissive = scheme.emissive;
             } else if (colorMode === 'gradient') {
-                // Gradient based on position
                 const distance = Math.sqrt(this.x * this.x + this.y * this.y);
-                const maxDist = 200;
+                const maxDist = 250;
                 const t = Math.min(distance / maxDist, 1);
                 
                 if (this.type === 'thick') {
-                    color = new THREE.Color().setHSL(t * 0.8, 0.8, 0.5);
+                    color = new THREE.Color().setHSL(t * 0.8, 0.9, 0.6);
                 } else {
-                    color = new THREE.Color().setHSL(t * 0.8 + 0.2, 0.7, 0.6);
+                    color = new THREE.Color().setHSL(t * 0.8 + 0.2, 0.8, 0.7);
                 }
-                emissive = 0x000000;
+                emissive = new THREE.Color().setHSL(t * 0.8, 0.5, 0.1);
             } else if (colorMode === 'random') {
-                // Random colors for each tile
-                color = new THREE.Color().setHSL(Math.random(), 0.7, 0.5);
-                emissive = new THREE.Color().setHSL(Math.random(), 0.5, 0.1);
+                color = new THREE.Color().setHSL(Math.random(), 0.8, 0.6);
+                emissive = new THREE.Color().setHSL(Math.random(), 0.6, 0.15);
             } else if (colorMode === 'rainbow') {
-                // Rainbow based on index
-                const hue = (index / totalTiles) * 0.8;
-                color = new THREE.Color().setHSL(hue, 0.8, 0.5);
-                emissive = new THREE.Color().setHSL(hue, 0.5, 0.1);
+                const hue = (index / totalTiles) * 0.9;
+                color = new THREE.Color().setHSL(hue, 0.9, 0.6);
+                emissive = new THREE.Color().setHSL(hue, 0.7, 0.15);
+            } else if (colorMode === 'quantum') {
+                const prob = this.quantumState;
+                color = new THREE.Color().setHSL(prob * 0.8, 0.95, 0.6);
+                emissive = new THREE.Color().setHSL(prob * 0.8, 0.8, 0.2);
             }
             
-            material = new THREE.MeshPhongMaterial({
+            // Enhanced material properties
+            const materialProps = {
                 color: color,
                 emissive: emissive,
-                emissiveIntensity: 0.1,
-                shininess: 100,
+                emissiveIntensity: subsurface ? 0.4 : 0.2,
+                shininess: raytracing ? 200 : 120,
                 wireframe: wireframe,
-                side: THREE.DoubleSide
-            });
+                side: THREE.DoubleSide,
+                transparent: true,
+                opacity: 0.95,
+                metalness: raytracing ? 0.3 : 0,
+                roughness: raytracing ? 0.2 : 1
+            };
+            
+            if (raytracing) {
+                material = new THREE.MeshStandardMaterial(materialProps);
+            } else {
+                material = new THREE.MeshPhongMaterial(materialProps);
+            }
             
             const mesh = new THREE.Mesh(geometry, material);
             mesh.castShadow = true;
             mesh.receiveShadow = true;
             mesh.userData.tileType = this.type;
             mesh.userData.tileIndex = index;
+            mesh.userData.quantumState = this.quantumState;
+            mesh.userData.wavePhase = this.wavePhase;
+            mesh.userData.energy = this.energy;
+            mesh.userData.originalColor = color;
+            mesh.userData.originalEmissive = emissive;
             
             // Add spacing effect
             if (tileSpacing > 0) {
@@ -634,7 +1093,7 @@
             }
             
             // Animation delay
-            mesh.userData.animationDelay = index * 0.01;
+            mesh.userData.animationDelay = index * 0.02;
             mesh.userData.originalY = mesh.position.y;
             
             return mesh;
@@ -644,9 +1103,9 @@
     function generateInitialTiling() {
         const rhombi = [];
         const numSectors = 5;
-        const initialSize = 50;
+        const initialSize = 60;
         
-        const randomConfig = Math.floor(Math.random() * 3);
+        const randomConfig = Math.floor(Math.random() * 4);
         const randomRotation = Math.random() * 360;
         
         for (let i = 0; i < numSectors; i++) {
@@ -657,15 +1116,20 @@
                 rhombi.push(new Rhombus3D('thick', 0, 0, baseAngle + 36 * Math.PI / 180, initialSize));
             } else if (randomConfig === 1) {
                 rhombi.push(new Rhombus3D('thick', 0, 0, baseAngle, initialSize));
-                rhombi.push(new Rhombus3D('thin', 0, 0, baseAngle + 36 * Math.PI / 180, initialSize * 0.8));
-            } else {
-                const offset = Math.random() * 20 - 10;
+                rhombi.push(new Rhombus3D('thin', 0, 0, baseAngle + 36 * Math.PI / 180, initialSize * 0.85));
+            } else if (randomConfig === 2) {
+                const offset = Math.random() * 30 - 15;
                 rhombi.push(new Rhombus3D('thick', 0, 0, baseAngle + offset * Math.PI / 180, initialSize));
                 if (i % 2 === 0) {
                     rhombi.push(new Rhombus3D('thin', 0, 0, baseAngle + 36 * Math.PI / 180, initialSize * 0.9));
                 } else {
                     rhombi.push(new Rhombus3D('thick', 0, 0, baseAngle + 36 * Math.PI / 180, initialSize));
                 }
+            } else {
+                // Complex pattern
+                rhombi.push(new Rhombus3D('thick', 0, 0, baseAngle, initialSize));
+                rhombi.push(new Rhombus3D('thin', 0, 0, baseAngle + 24 * Math.PI / 180, initialSize * 0.8));
+                rhombi.push(new Rhombus3D('thick', 0, 0, baseAngle + 48 * Math.PI / 180, initialSize * 0.9));
             }
         }
         
@@ -674,12 +1138,12 @@
     
     function subdividePattern(rhombi, iterations) {
         let current = rhombi;
-        const adjustedIterations = iterations + (Math.random() > 0.5 ? 0 : -1);
+        const adjustedIterations = iterations + (Math.random() > 0.3 ? 0 : -1);
         
         for (let i = 0; i < adjustedIterations; i++) {
             const next = [];
             for (const rhombus of current) {
-                if (i === adjustedIterations - 1 && Math.random() > 0.95) {
+                if (i === adjustedIterations - 1 && Math.random() > 0.92) {
                     next.push(rhombus);
                 } else {
                     next.push(...rhombus.subdivide());
@@ -718,10 +1182,389 @@
             scene.add(mesh);
         });
         
-        // Update stats
-        document.getElementById('stats').textContent = `FPS: 60 | Tiles: ${rhombiMeshes.length}`;
+        updateStats();
     }
     
+    function createQuantumField() {
+        if (waveFunctionMesh) {
+            scene.remove(waveFunctionMesh);
+            waveFunctionMesh.geometry.dispose();
+            waveFunctionMesh.material.dispose();
+        }
+        
+        const geometry = new THREE.PlaneGeometry(500, 500, 64, 64);
+        const material = new THREE.MeshBasicMaterial({
+            color: 0x0088ff,
+            wireframe: true,
+            transparent: true,
+            opacity: 0.4
+        });
+        
+        waveFunctionMesh = new THREE.Mesh(geometry, material);
+        waveFunctionMesh.rotation.x = -Math.PI / 2;
+        waveFunctionMesh.position.y = -80;
+        scene.add(waveFunctionMesh);
+    }
+    
+    function updateQuantumField(time) {
+        if (!waveFunctionMesh) return;
+        
+        const positions = waveFunctionMesh.geometry.attributes.position;
+        for (let i = 0; i < positions.count; i++) {
+            const x = positions.getX(i);
+            const z = positions.getZ(i);
+            const distance = Math.sqrt(x * x + z * z);
+            const amplitude = Math.sin(distance * 0.015 + time * 0.008) * quantumIntensity * 0.2;
+            const interference = Math.cos(x * 0.02 + time * 0.006) * Math.sin(z * 0.02 + time * 0.004) * quantumIntensity * 0.1;
+            positions.setY(i, amplitude + interference);
+        }
+        positions.needsUpdate = true;
+    }
+    
+    function createQuantumParticles() {
+        // Clear existing particles
+        quantumParticles.forEach(particle => particle.destroy());
+        quantumParticles = [];
+        
+        const numParticles = Math.min(80, Math.floor(quantumIntensity * 0.8));
+        for (let i = 0; i < numParticles; i++) {
+            const particle = new QuantumParticle(
+                (Math.random() - 0.5) * 300,
+                (Math.random() - 0.5) * 150,
+                (Math.random() - 0.5) * 300
+            );
+            quantumParticles.push(particle);
+        }
+        
+        // Create entangled pairs
+        entangledPairs = [];
+        for (let i = 0; i < quantumParticles.length - 1; i += 2) {
+            if (Math.random() < 0.4) { // 40% chance of entanglement
+                quantumParticles[i].entangled = quantumParticles[i + 1];
+                quantumParticles[i + 1].entangled = quantumParticles[i];
+                entangledPairs.push([quantumParticles[i], quantumParticles[i + 1]]);
+            }
+        }
+    }
+    
+    function updateQuantumEffects(time) {
+        quantumTime = time;
+        
+        // Update quantum particles
+        quantumParticles = quantumParticles.filter(particle => particle.update(time));
+        
+        // Regenerate particles if needed
+        if (entanglement && quantumParticles.length < 10) {
+            createQuantumParticles();
+        }
+        
+        // Update quantum field
+        if (quantumField && waveFunctionMesh) {
+            updateQuantumField(time);
+        }
+        
+        // Update tile quantum effects
+        rhombiMeshes.forEach(mesh => {
+            const quantum = mesh.userData.quantumState;
+            const energy = mesh.userData.energy;
+            
+            // Wave function visualization
+            if (waveFunction) {
+                mesh.userData.wavePhase += 0.08;
+                const amplitude = Math.sin(mesh.userData.wavePhase) * quantumIntensity * 0.02;
+                mesh.material.opacity = 0.8 + amplitude;
+                mesh.material.emissiveIntensity = (subsurface ? 0.4 : 0.2) + Math.abs(amplitude) * 0.2;
+            }
+            
+            // Quantum tunneling effect
+            if (quantumTunneling && Math.random() < 0.002) {
+                mesh.material.opacity = 0.05;
+                setTimeout(() => {
+                    mesh.material.opacity = 0.95;
+                }, 200);
+            }
+            
+            // Uncertainty principle visualization
+            if (uncertainty) {
+                const uncertaintyFactor = quantumIntensity * 0.00005;
+                mesh.rotation.x += (Math.random() - 0.5) * uncertaintyFactor;
+                mesh.rotation.z += (Math.random() - 0.5) * uncertaintyFactor;
+            }
+            
+            // Quantum state color shifting
+            if (colorMode === 'quantum') {
+                const newQuantum = (quantum + time * 0.0008) % 1;
+                mesh.userData.quantumState = newQuantum;
+                const newColor = new THREE.Color().setHSL(newQuantum * 0.8, 0.95, 0.6);
+                mesh.material.color = newColor;
+            }
+            
+            // Energy-based effects
+            if (energyLevel > 50) {
+                const energyIntensity = (energy / 100) * (energyLevel / 100);
+                mesh.material.emissiveIntensity = Math.max(mesh.material.emissiveIntensity, energyIntensity * 0.5);
+            }
+        });
+        
+        // Animate quantum lights
+        if (window.quantumLights) {
+            window.quantumLights[0].intensity = 0.5 + Math.sin(time * 0.003) * 0.3;
+            window.quantumLights[1].intensity = 0.5 + Math.cos(time * 0.003) * 0.3;
+            
+            // Dynamic color shifting
+            const hue1 = (time * 0.001) % 1;
+            const hue2 = ((time * 0.001) + 0.5) % 1;
+            window.quantumLights[0].color.setHSL(hue1, 1, 0.5);
+            window.quantumLights[1].color.setHSL(hue2, 1, 0.5);
+        }
+        
+        // Animate rim lights
+        if (window.rimLights && raytracing) {
+            window.rimLights[0].intensity = 0.3 + Math.sin(time * 0.002) * 0.2;
+            window.rimLights[1].intensity = 0.3 + Math.cos(time * 0.002) * 0.2;
+        }
+    }
+    
+    function updateQuantumInfo() {
+        const activeEffects = [];
+        if (quantumField) activeEffects.push('FIELD');
+        if (waveFunction) activeEffects.push('WAVE');
+        if (quantumTunneling) activeEffects.push('TUNNEL');
+        if (entanglement) activeEffects.push('ENTANGLE');
+        if (uncertainty) activeEffects.push('UNCERTAINTY');
+        
+        document.getElementById('quantumInfo').textContent = 
+            activeEffects.length > 0 ? `QUANTUM EFFECTS: ${activeEffects.join(', ')}` : 'QUANTUM EFFECTS: DISABLED';
+        
+        // Update quantum panel
+        const panel = document.getElementById('quantumPanel');
+        const coherence = activeEffects.length > 3 ? 'DECOHERENT' : 'COHERENT';
+        const amplitude = Math.sin(quantumTime * 0.01).toFixed(2);
+        const entanglePercent = Math.floor((entangledPairs.length / Math.max(quantumParticles.length / 2, 1)) * 100) || 0;
+        const energy = (energyLevel * quantumIntensity / 100).toFixed(1);
+        
+        panel.innerHTML = `
+            QUANTUM STATE: ${coherence}<br>
+            WAVE AMPLITUDE: ${amplitude}<br>
+            ENTANGLEMENT: ${entanglePercent}%<br>
+            ENERGY: ${energy} GeV<br>
+            UNCERTAINTY: ΔxΔp ≥ ℏ/2
+        `;
+    }
+    
+    function updateRenderInfo() {
+        const activeRender = [];
+        if (bloom) activeRender.push('BLOOM');
+        if (ssao) activeRender.push('SSAO');
+        if (subsurface) activeRender.push('SUBSURFACE');
+        if (raytracing) activeRender.push('RAYTRACING');
+        if (postProcessing) activeRender.push('POST-FX');
+        if (volumetric) activeRender.push('VOLUMETRIC');
+        
+        document.getElementById('renderInfo').textContent = 
+            activeRender.length > 0 ? `ENHANCED RENDERING: ${activeRender.join(', ')}` : 'ENHANCED RENDERING: DISABLED';
+        
+        // Update render panel
+        const panel = document.getElementById('renderPanel');
+        const mode = raytracing ? 'PHYSICALLY-BASED' : 'STANDARD';
+        
+        panel.innerHTML = `
+            RENDER MODE: ${mode}<br>
+            BLOOM: ${bloom ? 'ON' : 'OFF'}<br>
+            SUBSURFACE: ${subsurface ? 'ON' : 'OFF'}<br>
+            RAYTRACING: ${raytracing ? 'ON' : 'OFF'}
+        `;
+    }
+    
+    // Quantum control functions
+    function toggleQuantumField() {
+        quantumField = !quantumField;
+        document.getElementById('quantumBtn').classList.toggle('active');
+        
+        if (quantumField) {
+            createQuantumField();
+        } else if (waveFunctionMesh) {
+            scene.remove(waveFunctionMesh);
+            waveFunctionMesh.geometry.dispose();
+            waveFunctionMesh.material.dispose();
+            waveFunctionMesh = null;
+        }
+        updateQuantumInfo();
+    }
+    
+    function toggleWaveFunction() {
+        waveFunction = !waveFunction;
+        document.getElementById('waveBtn').classList.toggle('active');
+        updateQuantumInfo();
+    }
+    
+    function toggleQuantumTunneling() {
+        quantumTunneling = !quantumTunneling;
+        document.getElementById('tunnelBtn').classList.toggle('active');
+        updateQuantumInfo();
+    }
+    
+    function toggleEntanglement() {
+        entanglement = !entanglement;
+        document.getElementById('entangleBtn').classList.toggle('active');
+        
+        if (entanglement) {
+            createQuantumParticles();
+        } else {
+            quantumParticles.forEach(particle => particle.destroy());
+            quantumParticles = [];
+            entangledPairs = [];
+        }
+        updateQuantumInfo();
+    }
+    
+    function toggleUncertainty() {
+        uncertainty = !uncertainty;
+        document.getElementById('uncertaintyBtn').classList.toggle('active');
+        updateQuantumInfo();
+    }
+    
+    function collapseWaveFunction() {
+        // Randomly collapse all tiles to definite states
+        rhombiMeshes.forEach(mesh => {
+            mesh.userData.quantumState = Math.random() > 0.5 ? 1 : 0;
+            if (colorMode === 'quantum') {
+                const newColor = mesh.userData.quantumState > 0.5 ? 0x00ffff : 0xff00ff;
+                mesh.material.color.setHex(newColor);
+            }
+        });
+        
+        // Flash effect
+        scene.fog.color.setHex(0xffffff);
+        setTimeout(() => {
+            scene.fog.color.setHex(0x0a0a1a);
+        }, 150);
+        
+        // Collapse quantum particles
+        quantumParticles.forEach(particle => {
+            particle.probability = Math.random() > 0.5 ? 1 : 0;
+            particle.mesh.material.opacity = particle.probability;
+        });
+    }
+    
+    // Rendering control functions
+    function toggleBloom() {
+        bloom = !bloom;
+        document.getElementById('bloomBtn').classList.toggle('active');
+        updateRenderInfo();
+        
+        if (bloom) {
+            rhombiMeshes.forEach(mesh => {
+                mesh.material.emissiveIntensity = Math.max(mesh.material.emissiveIntensity, bloomIntensity / 100);
+            });
+        }
+    }
+    
+    function toggleSSAO() {
+        ssao = !ssao;
+        document.getElementById('ssaoBtn').classList.toggle('active');
+        updateRenderInfo();
+        
+        // SSAO would require post-processing pipeline
+        if (ssao) {
+            scene.fog.density = 0.0001;
+        } else {
+            scene.fog.density = 0;
+        }
+    }
+    
+    function toggleSubsurface() {
+        subsurface = !subsurface;
+        document.getElementById('subsurfaceBtn').classList.toggle('active');
+        updateRenderInfo();
+        
+        rhombiMeshes.forEach(mesh => {
+            mesh.material.emissiveIntensity = subsurface ? 0.4 : 0.2;
+            mesh.material.transparent = true;
+            mesh.material.opacity = subsurface ? 0.85 : 0.95;
+        });
+    }
+    
+    function toggleRaytracing() {
+        raytracing = !raytracing;
+        document.getElementById('raytracingBtn').classList.toggle('active');
+        updateRenderInfo();
+        
+        // Switch to physically-based materials
+        rhombiMeshes.forEach(mesh => {
+            const oldMaterial = mesh.material;
+            
+            if (raytracing) {
+                mesh.material = new THREE.MeshStandardMaterial({
+                    color: oldMaterial.color,
+                    emissive: oldMaterial.emissive,
+                    emissiveIntensity: oldMaterial.emissiveIntensity,
+                    metalness: 0.3,
+                    roughness: 0.2,
+                    wireframe: oldMaterial.wireframe,
+                    transparent: oldMaterial.transparent,
+                    opacity: oldMaterial.opacity
+                });
+            } else {
+                mesh.material = new THREE.MeshPhongMaterial({
+                    color: oldMaterial.color,
+                    emissive: oldMaterial.emissive,
+                    emissiveIntensity: oldMaterial.emissiveIntensity,
+                    shininess: 120,
+                    wireframe: oldMaterial.wireframe,
+                    transparent: oldMaterial.transparent,
+                    opacity: oldMaterial.opacity
+                });
+            }
+            
+            oldMaterial.dispose();
+        });
+        
+        // Update lighting for raytracing
+        if (window.rimLights) {
+            window.rimLights.forEach(light => {
+                light.intensity = raytracing ? 0.5 : 0.3;
+            });
+        }
+    }
+    
+    function togglePostProcessing() {
+        postProcessing = !postProcessing;
+        document.getElementById('postBtn').classList.toggle('active');
+        updateRenderInfo();
+        
+        // Simple post-processing simulation
+        if (postProcessing) {
+            renderer.toneMappingExposure = 1.5;
+            scene.fog.near = 100;
+            scene.fog.far = 1500;
+        } else {
+            renderer.toneMappingExposure = 1.2;
+            scene.fog.near = 150;
+            scene.fog.far = 1200;
+        }
+    }
+    
+    function toggleVolumetric() {
+        volumetric = !volumetric;
+        document.getElementById('volumetricBtn').classList.toggle('active');
+        updateRenderInfo();
+        
+        // Volumetric lighting simulation
+        if (volumetric && window.quantumLights) {
+            window.quantumLights.forEach(light => {
+                light.distance = 1200;
+                light.decay = 1;
+            });
+        } else if (window.quantumLights) {
+            window.quantumLights.forEach(light => {
+                light.distance = 800;
+                light.decay = 2;
+            });
+        }
+    }
+    
+    // Standard control functions
     function toggleColors() {
         if (colorMode === 'scheme') {
             currentSchemeIndex = (currentSchemeIndex + 1) % colorSchemes.length;
@@ -734,35 +1577,17 @@
                 mesh.material.emissive.setHex(scheme.emissive);
             });
         } else {
-            // Regenerate with new colors for other modes
             generateTiling();
         }
     }
     
     function toggleColorMode() {
-        const modes = ['scheme', 'gradient', 'random', 'rainbow'];
+        const modes = ['scheme', 'gradient', 'random', 'rainbow', 'quantum'];
         const currentIndex = modes.indexOf(colorMode);
         colorMode = modes[(currentIndex + 1) % modes.length];
         
         updateColorInfo();
-        
-        // Regenerate with new color mode
-        rhombiMeshes.forEach(mesh => {
-            scene.remove(mesh);
-            mesh.geometry.dispose();
-            mesh.material.dispose();
-        });
-        rhombiMeshes = [];
-        
-        const initial = generateInitialTiling();
-        const iterations = window.innerWidth < 640 ? 2 : 3;
-        const subdivided = subdividePattern(initial, iterations);
-        
-        subdivided.forEach((rhombus, index) => {
-            const mesh = rhombus.createMesh(index, subdivided.length);
-            rhombiMeshes.push(mesh);
-            scene.add(mesh);
-        });
+        generateTiling();
     }
     
     function updateColorInfo() {
@@ -775,6 +1600,8 @@
             colorInfo.textContent = 'Color: Random Chaos';
         } else if (colorMode === 'rainbow') {
             colorInfo.textContent = 'Color: Rainbow Spectrum';
+        } else if (colorMode === 'quantum') {
+            colorInfo.textContent = 'Color: Quantum Superposition';
         }
     }
     
@@ -797,12 +1624,24 @@
             const url = URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `penrose-3d-${Date.now()}.png`;
+            a.download = `quantum-penrose-3d-${Date.now()}.png`;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
         }, 'image/png');
+    }
+    
+    function updateStats() {
+        const activeEffects = [];
+        if (quantumField) activeEffects.push('FIELD');
+        if (waveFunction) activeEffects.push('Ψ');
+        if (quantumTunneling) activeEffects.push('TUNNEL');
+        if (entanglement) activeEffects.push('ENTANGLED');
+        if (uncertainty) activeEffects.push('Δx');
+        
+        const quantumStatus = activeEffects.length > 0 ? activeEffects.join(' ') : 'STABLE';
+        document.getElementById('stats').textContent = `FPS: 60 | Tiles: ${rhombiMeshes.length} | Ψ: ${quantumStatus}`;
     }
     
     function setupEventListeners() {
@@ -818,6 +1657,52 @@
             generateTiling();
         });
         
+        // Quantum intensity slider
+        document.getElementById('quantumSlider').addEventListener('input', (e) => {
+            quantumIntensity = parseFloat(e.target.value);
+            
+            // Update quantum field intensity
+            if (waveFunctionMesh) {
+                waveFunctionMesh.material.opacity = quantumIntensity / 100 * 0.4;
+            }
+        });
+        
+        // Energy level slider
+        document.getElementById('energySlider').addEventListener('input', (e) => {
+            energyLevel = parseFloat(e.target.value);
+            
+            // Update particle energies
+            quantumParticles.forEach(particle => {
+                particle.energy = (particle.energy * 0.7) + (energyLevel * 0.3);
+            });
+        });
+        
+        // Bloom intensity slider
+        document.getElementById('bloomSlider').addEventListener('input', (e) => {
+            bloomIntensity = parseFloat(e.target.value);
+            
+            if (bloom) {
+                rhombiMeshes.forEach(mesh => {
+                    mesh.material.emissiveIntensity = Math.max(0.2, bloomIntensity / 100);
+                });
+            }
+        });
+        
+        // Quality slider
+        document.getElementById('qualitySlider').addEventListener('input', (e) => {
+            renderQuality = parseFloat(e.target.value);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, renderQuality));
+            
+            // Update shadow map resolution based on quality
+            const shadowSize = renderQuality === 1 ? 1024 : renderQuality === 2 ? 2048 : renderQuality === 3 ? 4096 : 8192;
+            scene.traverse((object) => {
+                if (object.isDirectionalLight && object.shadow) {
+                    object.shadow.mapSize.setScalar(shadowSize);
+                    object.shadow.map = null; // Force regeneration
+                }
+            });
+        });
+        
         // Window resize
         window.addEventListener('resize', () => {
             const container = document.getElementById('canvas-container');
@@ -825,32 +1710,106 @@
             camera.updateProjectionMatrix();
             renderer.setSize(container.clientWidth, container.clientHeight);
         });
+        
+        // Keyboard shortcuts
+        window.addEventListener('keydown', (e) => {
+            switch(e.key.toLowerCase()) {
+                case ' ':
+                    e.preventDefault();
+                    generateTiling();
+                    break;
+                case 'q':
+                    toggleQuantumField();
+                    break;
+                case 'w':
+                    toggleWaveFunction();
+                    break;
+                case 'e':
+                    toggleEntanglement();
+                    break;
+                case 'r':
+                    toggleAutoRotate();
+                    break;
+                case 'b':
+                    toggleBloom();
+                    break;
+                case 'v':
+                    toggleVolumetric();
+                    break;
+                case 'c':
+                    collapseWaveFunction();
+                    break;
+            }
+        });
     }
     
     function animate() {
         requestAnimationFrame(animate);
         
-        const time = performance.now() * 0.001;
+        const time = performance.now();
         
-        // Auto rotation
+        // Auto rotation with momentum
         if (autoRotate) {
-            scene.rotation.y += 0.005;
+            scene.rotation.y += 0.008;
+            if (scene.userData.momentumY) {
+                scene.rotation.y += scene.userData.momentumY;
+                scene.userData.momentumY *= 0.95; // Decay
+            }
         }
         
-        // Floating animation
-        rhombiMeshes.forEach(mesh => {
+        // Enhanced floating animation
+        rhombiMeshes.forEach((mesh, index) => {
             const delay = mesh.userData.animationDelay;
-            mesh.position.y = mesh.userData.originalY + Math.sin(time + delay) * 2;
+            const baseY = mesh.userData.originalY;
+            
+            // Multi-layered wave motion
+            const primaryWave = Math.sin(time * 0.001 + delay) * 3;
+            const secondaryWave = Math.sin(time * 0.0015 + delay * 2) * 1.5;
+            const tertiaryWave = Math.cos(time * 0.0008 + delay * 0.5) * 0.8;
+            
+            mesh.position.y = baseY + primaryWave + secondaryWave + tertiaryWave;
+            
+            // Subtle rotation for quantum uncertainty
+            if (uncertainty) {
+                mesh.rotation.y += Math.sin(time * 0.001 + index) * 0.0005;
+            }
         });
         
-        // Update FPS
+        // Update quantum effects
+        updateQuantumEffects(time);
+        
+        // Dynamic lighting effects
+        if (postProcessing && window.quantumLights) {
+            const intensity1 = 0.6 + Math.sin(time * 0.004) * 0.4;
+            const intensity2 = 0.6 + Math.cos(time * 0.004) * 0.4;
+            window.quantumLights[0].intensity = intensity1;
+            window.quantumLights[1].intensity = intensity2;
+        }
+        
+        // Update FPS and info displays
         frameCount++;
         const currentTime = performance.now();
         if (currentTime - lastTime >= 1000) {
             const fps = Math.round(frameCount * 1000 / (currentTime - lastTime));
-            document.getElementById('stats').textContent = `FPS: ${fps} | Tiles: ${rhombiMeshes.length}`;
+            const activeEffects = [];
+            if (quantumField) activeEffects.push('FIELD');
+            if (waveFunction) activeEffects.push('Ψ');
+            if (quantumTunneling) activeEffects.push('TUNNEL');
+            if (entanglement) activeEffects.push('ENTANGLED');
+            if (uncertainty) activeEffects.push('Δx');
+            
+            const quantumStatus = activeEffects.length > 0 ? activeEffects.join(' ') : 'STABLE';
+            document.getElementById('stats').textContent = `FPS: ${fps} | Tiles: ${rhombiMeshes.length} | Ψ: ${quantumStatus}`;
+            
+            updateQuantumInfo();
+            updateRenderInfo();
             frameCount = 0;
             lastTime = currentTime;
+        }
+        
+        // Enhanced rendering with tone mapping
+        if (postProcessing) {
+            renderer.toneMappingExposure = 1.5 + Math.sin(time * 0.002) * 0.3;
         }
         
         renderer.render(scene, camera);
@@ -859,7 +1818,6 @@
     // Initialize on load
     init();
 </script>
-```
 
 </body>
 </html>
